@@ -5,7 +5,7 @@ from typing import TypedDict, List
 from pydantic import BaseModel, Field
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
-from agent_tools import parse_log, read_span
+from agent_tools import parse_log, read_span, trace_signal
 
 class AgentState(TypedDict):
     run_id: str
@@ -40,8 +40,33 @@ Reply with strictly the category name and nothing else."""
     return {"log_summary": parsed, "failure_class": "unknown"}
 
 def gather_context_node(state: AgentState) -> dict:
-    code_snippet = read_span(state["verilog_path"], 20, 50)
-    return {"code_context": code_snippet}
+    # 1. Ask the LLM to identify the specific failing signal from the log
+    extract_prompt = f"""Look at this failing log:
+{state['log_summary']}
+
+What Verilog signal is failing or causing the assertion error? 
+Output strictly the exact signal name (e.g., data_out, full, empty, count, wr_ptr) and nothing else."""
+    
+    # Use the raw LLM (not the structured one) for this quick text extraction
+    failing_signal = llm.invoke(extract_prompt).content.strip().lower()
+    
+    # 2. Clean up the output just in case it adds punctuation
+    import string
+    failing_signal = failing_signal.translate(str.maketrans('', '', string.punctuation))
+    
+    # 3. Use the deterministic tool to slice the code
+    traced_lines = trace_signal(state["verilog_path"], failing_signal)
+    
+    # 4. Provide both the broad context and the hyper-focused traced lines
+    general_code = read_span(state["verilog_path"], 20, 50)
+    
+    combined_context = f"""--- General Logic Block ---
+{general_code}
+
+--- Deterministic Trace for Signal '{failing_signal}' ---
+{traced_lines}"""
+    
+    return {"code_context": combined_context}
 
 def hypothesize_and_emit_node(state: AgentState) -> dict:
     prompt = f"""You are a hardware verification triage agent.
