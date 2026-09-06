@@ -1,0 +1,32 @@
+[
+    {
+        "run_id": "bug_001",
+        "file": "fifo.v",
+        "line": 36,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_002",
+        "file": "fifo.v",
+        "line": 40,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_003",
+        "file": "fifo.v",
+        "line": 25,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_004",
+        "file": "fifo.v",
+        "line": 39,
+        "bug_type": "stuck_at"
+    },
+    {
+        "run_id": "bug_005",
+        "file": "fifo.v",
+        "line": 31,
+        "bug_type": "wrong_reset"
+    }
+]

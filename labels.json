@@ -1,0 +1,7 @@
+[
+    {
+        "file": "fifo.v",
+        "line": 37,
+        "bug_type": "operator_flip"
+    }
+]
