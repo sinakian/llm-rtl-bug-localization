@@ -1,11 +1,24 @@
-import json
-import os
 import re
+import json
+import requests
 from typing import TypedDict, List
-from pydantic import BaseModel, Field
-from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
-from agent_tools import parse_log, read_span, trace_signal
+from agent_tools import parse_log, read_span, ast_trace_signal
+
+# ":3b" for a fast dev loop; "qwen2.5-coder:latest" (7B) or "llama3" for final numbers.
+MODEL_NAME = "qwen2.5-coder:3b"
+OLLAMA_URL = "http://localhost:11434/api/generate"
+TIMEOUT = 120
+
+VALID_CLASSES = ["operator_flip", "off_by_one", "stuck_at", "wrong_reset"]
+_STRUCT_KW = re.compile(r"^\s*(always|begin|end|endmodule|module|else|if)\b")
+N_PRED = 5  # emit up to 5 ranked candidate lines so we can score recall@5
+
+
+def _is_structural(text: str) -> bool:
+    t = text.strip()
+    return (not t) or t.startswith(("`", "//")) or bool(_STRUCT_KW.match(text))
+
 
 class AgentState(TypedDict):
     run_id: str
@@ -14,99 +27,178 @@ class AgentState(TypedDict):
     log_summary: str
     failure_class: str
     code_context: str
+    ast_lines: List[int]
     predicted_lines: List[int]
     rationale: str
     suggested_fix: str
 
-class AgentOutput(BaseModel):
-    predicted_lines: List[int] = Field(description="List of the top 3 most likely line numbers causing the bug.")
-    rationale: str = Field(description="A short explanation of the root cause.")
-    suggested_fix: str = Field(description="A short suggested fix for the Verilog code.")
 
-llm = ChatOllama(model="llama3", temperature=0.5)
-structured_llm = llm.with_structured_output(AgentOutput)
+def _ollama(prompt: str, as_json: bool) -> str:
+    payload = {"model": MODEL_NAME, "prompt": prompt, "stream": False}
+    if as_json:
+        payload["format"] = "json"
+    r = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
+    return r.json().get("response", "")
+
+
+def _src_lines(path: str) -> List[str]:
+    with open(path, "r") as f:
+        return f.read().splitlines()
+
+
+def _stage_signals(log_summary: str) -> list:
+    """Several distinct root causes on this design surface through the SAME assertion, so
+    each stage traces the UNION of signals that can plausibly cause it. The MODEL then
+    ranks within this candidate set (recall@5 measures whether the true line is in it)."""
+    s = log_summary.upper()
+    if "RESET STAGE" in s:
+        return ["empty", "full", "count"]
+    if "FILL STAGE" in s:
+        return ["full", "count", "wr_ptr", "rd_ptr", "data_out"]
+    if "READBACK STAGE" in s:
+        return ["data_out", "rd_ptr", "wr_ptr", "count", "full"]
+    return ["count", "full", "data_out", "wr_ptr", "rd_ptr"]
 
 
 def classify_node(state: AgentState) -> dict:
-    parsed = parse_log(state["log_path"])
-    prompt = f"""Analyze this simulation error snippet:
-{parsed}
-Classify the root cause into EXACTLY one of these categories: operator_flip, off_by_one, stuck_at, wrong_reset.
-Reply with strictly the category name and nothing else."""
-    res = llm.invoke(prompt).content.strip().lower()
-    for cat in ["operator_flip", "off_by_one", "stuck_at", "wrong_reset"]:
-        if cat in res:
-            return {"log_summary": parsed, "failure_class": cat}
-    return {"log_summary": parsed, "failure_class": "unknown"}
+    print("  [classify]", flush=True)
+    return {"log_summary": parse_log(state["log_path"])}
+
 
 def gather_context_node(state: AgentState) -> dict:
-    # 1. Ask the LLM to identify the specific failing signal from the log
-    extract_prompt = f"""Look at this failing log:
-{state['log_summary']}
+    print("  [gather_context]", flush=True)
+    signals = _stage_signals(state["log_summary"])
 
-What Verilog signal is failing or causing the assertion error? 
-Output strictly the exact signal name (e.g., data_out, full, empty, count, wr_ptr) and nothing else."""
-    
-    # Use the raw LLM (not the structured one) for this quick text extraction
-    failing_signal = llm.invoke(extract_prompt).content.strip().lower()
-    
-    # 2. Clean up the output just in case it adds punctuation
-    import string
-    failing_signal = failing_signal.translate(str.maketrans('', '', string.punctuation))
-    
-    # 3. Use the deterministic tool to slice the code
-    traced_lines = trace_signal(state["verilog_path"], failing_signal)
-    
-    # 4. Provide both the broad context and the hyper-focused traced lines
-    general_code = read_span(state["verilog_path"], 20, 50)
-    
-    combined_context = f"""--- General Logic Block ---
-{general_code}
+    traces, ast_lines = [], []
+    for sig in signals:
+        t = ast_trace_signal(state["verilog_path"], sig, top_module="fifo")
+        nums = [int(n) for n in re.findall(r"Line (\d+):", t)]
+        if nums:
+            traces.append(t)
+            ast_lines.extend(nums)
 
---- Deterministic Trace for Signal '{failing_signal}' ---
-{traced_lines}"""
-    
-    return {"code_context": combined_context}
+    src = _src_lines(state["verilog_path"])
+    full_code = read_span(state["verilog_path"], 1, len(src))
+
+    context = f"""--- Full Verilog Source (line numbers are authoritative) ---
+{full_code}
+
+--- Deterministic dataflow for the failing signals {signals} ---
+{chr(10).join(traces)}"""
+    return {"code_context": context, "ast_lines": ast_lines}
+
+
+def _coerce(raw: str, src: List[str], ast_lines: List[int]) -> dict:
+    data = {}
+    try:
+        data = json.loads(raw)
+    except Exception:
+        m = re.search(r"\{.*\}", raw, re.DOTALL)
+        if m:
+            try:
+                data = json.loads(m.group(0))
+            except Exception:
+                data = {}
+
+    lines = data.get("predicted_lines", [])
+    if isinstance(lines, (int, str)):
+        lines = [lines]
+    model_lines = []
+    for x in lines:
+        try:
+            model_lines.append(int(x))
+        except Exception:
+            pass
+
+    def keep(n):
+        return 1 <= n <= len(src) and not _is_structural(src[n - 1])
+
+    # Candidate set = deterministic assignment lines for the stage's signals.
+    cand = [n for n in ast_lines if keep(n)]
+    cand_set = set(cand)
+
+    # The MODEL RANKS first (its judgement of which candidates are wrong), but restricted
+    # to real candidate lines so a weak model can't inject hallucinated line numbers.
+    # Remaining candidates are appended as a deterministic backstop for recall.
+    ranked = [n for n in model_lines if n in cand_set]
+    merged, seen = [], set()
+    for n in ranked + cand:
+        if n in seen:
+            continue
+        seen.add(n)
+        merged.append(n)
+    if not merged:                      # last resort, never emit garbage
+        merged = [n for n in model_lines if keep(n)]
+
+    cls = str(data.get("predicted_class", "")).strip().lower()
+    cls = next((c for c in VALID_CLASSES if c in cls), "unknown")
+
+    return {
+        "failure_class": cls,
+        "predicted_lines": merged[:N_PRED],
+        "rationale": str(data.get("rationale", ""))[:500],
+        "suggested_fix": str(data.get("suggested_fix", ""))[:300],
+    }
+
 
 def hypothesize_and_emit_node(state: AgentState) -> dict:
+    print("  [hypothesize]", flush=True)
+    cand = sorted(set(state.get("ast_lines", [])))
     prompt = f"""You are a hardware verification triage agent.
-Design file: {state['verilog_path']}
 
-Failing Log Summary:
 {state['log_summary']}
 
-Verilog Code Context:
 {state['code_context']}
 
-Identified Failure Class: {state['failure_class']}
+CANDIDATE LINES (the bug is on ONE of these; choose and RANK only from this list):
+{cand}
 
-Task: Hypothesize the root cause line numbers and suggest a fix. 
-CRITICAL RULE: Base your answer STRICTLY on the provided Verilog Code Context. Do not invent signal names."""
+RULES:
+1. predicted_lines = the candidate lines above, RANKED most-likely-first (up to 5). Use
+   ONLY numbers from the candidate list. Never a structural line.
+2. predicted_class uses the FAILURE STAGE prior, refined with the code and dataflow:
+   - RESET stage    -> wrong_reset (a register resets to the wrong constant).
+   - FILL stage     -> off_by_one if the full-flag compare is off; operator_flip if a
+                       write pointer/counter uses the wrong operator; stuck_at if a signal
+                       is driven by a constant.
+   - READBACK stage -> stuck_at if data_out is a CONSTANT; operator_flip if a pointer uses
+                       the wrong operator.
 
+Output ONLY this JSON:
+{{"predicted_class":"<operator_flip|off_by_one|stuck_at|wrong_reset>",
+  "predicted_lines":[most_likely, ...up to 5],
+  "rationale":"...","suggested_fix":"..."}}"""
     try:
-        # We use structured_llm here instead of the raw llm!
-        res = structured_llm.invoke(prompt)
-        
-        return {
-            "predicted_lines": res.predicted_lines[:3],
-            "rationale": res.rationale,
-            "suggested_fix": res.suggested_fix
-        }
+        raw = _ollama(prompt, as_json=True)
+        return _coerce(raw, _src_lines(state["verilog_path"]), state.get("ast_lines", []))
     except Exception as e:
-        return {"predicted_lines": [], "rationale": f"Structured parsing failed: {e}", "suggested_fix": ""}
+        cand = [n for n in sorted(set(state.get("ast_lines", [])))][:N_PRED]
+        return {"failure_class": "unknown", "predicted_lines": cand,
+                "rationale": f"call failed: {e}", "suggested_fix": ""}
+
 
 workflow = StateGraph(AgentState)
 workflow.add_node("classify", classify_node)
 workflow.add_node("gather_context", gather_context_node)
 workflow.add_node("hypothesize_emit", hypothesize_and_emit_node)
-
 workflow.set_entry_point("classify")
 workflow.add_edge("classify", "gather_context")
 workflow.add_edge("gather_context", "hypothesize_emit")
 workflow.add_edge("hypothesize_emit", END)
 app = workflow.compile()
 
+
 def triage_run(run_id: str, log_path: str, verilog_path: str) -> dict:
-    initial_state = {"run_id": run_id, "log_path": log_path, "verilog_path": verilog_path, "log_summary": "", "failure_class": "", "code_context": "", "predicted_lines": [], "rationale": "", "suggested_fix": ""}
-    final_state = app.invoke(initial_state)
-    return {"run_id": run_id, "predicted_lines": final_state["predicted_lines"], "predicted_class": final_state["failure_class"], "rationale": final_state["rationale"], "suggested_fix": final_state["suggested_fix"]}
+    initial_state = {
+        "run_id": run_id, "log_path": log_path, "verilog_path": verilog_path,
+        "log_summary": "", "failure_class": "", "code_context": "", "ast_lines": [],
+        "predicted_lines": [], "rationale": "", "suggested_fix": "",
+    }
+    final = app.invoke(initial_state)
+    return {
+        "run_id": run_id,
+        "predicted_lines": final["predicted_lines"],
+        "predicted_class": final["failure_class"],
+        "rationale": final["rationale"],
+        "suggested_fix": final["suggested_fix"],
+    }

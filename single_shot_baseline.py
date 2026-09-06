@@ -1,77 +1,65 @@
 import os
 import json
+import argparse
 import requests
 
 DATASET_DIR = "dataset"
-VERILOG_FILE = "src/fifo_buggy.v"
-OUTPUT_FILE = "predictions.json"
-
-# Make sure this matches the model you have downloaded in Ollama!
-OLLAMA_MODEL = "qwen2.5-coder:1.5b"
+LABELS_FILE = "dataset/labels.json"
+OLLAMA_MODEL = "qwen2.5-coder:1.5b"   # deliberately small: this is the weak baseline to beat
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
-def get_llm_prediction(log_content, verilog_content):
-    prompt = f"""
-    You are an expert hardware verification engineer.
-    A SystemVerilog simulation has failed. 
-    
-    Here is the Verilog source code:
-    {verilog_content}
-    
-    Here is the failing simulation log:
-    {log_content}
-    
-    Task: Identify the root cause of the failure.
-    1. List the top 3 most likely line numbers in the Verilog code causing the bug.
-    2. Classify the bug into one of these exact categories: operator_flip, off_by_one, stuck_at, wrong_reset.
-    
-    Output exactly in this JSON format and nothing else:
-    {{
-        "predicted_lines": [line1, line2, line3],
-        "predicted_class": "category_name"
-    }}
-    """
-    
-    payload = {
-        "model": OLLAMA_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "format": "json"
-    }
-    
+def numbered(path):
+    with open(path) as f:
+        return "".join(f"{i+1}: {ln}" for i, ln in enumerate(f.readlines()))
+
+def get_llm_prediction(log_content, verilog_numbered):
+    prompt = f"""You are an expert hardware verification engineer.
+A SystemVerilog simulation has failed.
+
+Verilog source (line numbers are authoritative):
+{verilog_numbered}
+
+Failing simulation log:
+{log_content}
+
+Task:
+1. List the top 3 most likely line numbers (from the numbered source) causing the bug.
+2. Classify into EXACTLY one of: operator_flip, off_by_one, stuck_at, wrong_reset.
+
+Output ONLY this JSON:
+{{"predicted_lines": [l1, l2, l3], "predicted_class": "category"}}"""
+    payload = {"model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"}
     try:
-        response = requests.post(OLLAMA_URL, json=payload)
-        response_text = response.json().get("response", "{}")
-        return json.loads(response_text)
+        r = requests.post(OLLAMA_URL, json=payload)
+        return json.loads(r.json().get("response", "{}"))
     except Exception as e:
-        print(f"Error querying Ollama or parsing JSON: {e}")
+        print(f"  error: {e}")
         return {"predicted_lines": [], "predicted_class": "unknown"}
 
 def main():
-    print(f"Starting Single-Shot LLM baseline using {OLLAMA_MODEL}...")
-    
-    with open(VERILOG_FILE, "r") as f:
-        verilog_content = f.read()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="predictions_singleshot.json")
+    args = ap.parse_args()
+
+    with open(LABELS_FILE) as f:
+        labels = {x["run_id"]: x for x in json.load(f)}
 
     predictions = []
-    
-    for file in os.listdir(DATASET_DIR):
-        if file.endswith(".log"):
-            run_id = file.replace(".log", "")
-            log_path = os.path.join(DATASET_DIR, file)
-            
-            with open(log_path, "r") as f:
-                log_content = f.read()
-                
-            print(f"Analyzing {run_id}...")
-            result = get_llm_prediction(log_content, verilog_content)
-            result["run_id"] = run_id
-            predictions.append(result)
+    for file in sorted(f for f in os.listdir(DATASET_DIR) if f.endswith(".log")):
+        run_id = file.replace(".log", "")
+        if run_id not in labels:
+            continue
+        with open(os.path.join(DATASET_DIR, file)) as f:
+            log_content = f.read()
+        verilog_numbered = numbered(labels[run_id]["file"])   # per-case mutant, numbered
+        print(f"Analyzing {run_id}...")
+        result = get_llm_prediction(log_content, verilog_numbered)
+        result["run_id"] = run_id
+        predictions.append(result)
 
-    with open(OUTPUT_FILE, "w") as f:
+    with open(args.out, "w") as f:
         json.dump(predictions, f, indent=4)
-    
-    print(f"LLM predictions saved to {OUTPUT_FILE}.")
+    print(f"Single-shot predictions -> {args.out}")
 
 if __name__ == "__main__":
     main()

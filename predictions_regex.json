@@ -1,0 +1,37 @@
+[
+    {
+        "predicted_lines": [
+            41
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_003"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_002"
+    },
+    {
+        "predicted_lines": [
+            23
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_005"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_001"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_004"
+    }
+]

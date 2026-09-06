@@ -1,0 +1,57 @@
+[
+    {
+        "run_id": "bug_001",
+        "predicted_lines": [
+            25,
+            31,
+            43
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "The full-flag comparison in the assignment 'full = (count == DEPTH);' is off. The full-flag should be asserted when 'count' equals 'DEPTH - 1', not 'DEPTH'.",
+        "suggested_fix": "full = (count == DEPTH - 1);"
+    },
+    {
+        "run_id": "bug_002",
+        "predicted_lines": [
+            25,
+            31,
+            43
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "In the write side of the FIFO, the write pointer increment operation `wr_ptr <= wr_ptr + 1;` is used. However, the count increment operation `count <= count + 1;` is missing in the write side of the FIFO. This means that the count value is not updated correctly when a new data is written, leading to the 'full' flag never asserting after the FIFO is filled.",
+        "suggested_fix": "Add the count increment operation in the write side of the FIFO. `count <= count + 1;`"
+    },
+    {
+        "run_id": "bug_003",
+        "predicted_lines": [
+            32,
+            39,
+            30
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "The 'full' signal is set using the wrong operator. The 'full' signal should be set to 'count == DEPTH' instead of 'count == DEPTH - 1'.",
+        "suggested_fix": "count <= count - 1;"
+    },
+    {
+        "run_id": "bug_004",
+        "predicted_lines": [
+            25,
+            31,
+            43
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "The full flag is set when count equals DEPTH. The count is incremented when a write is performed and the FIFO is not full, and decremented when a read is performed and the FIFO is not empty. However, the count is reset to 0 when a reset is detected, which means that the full flag can be set to 1 before the FIFO is filled with 8 elements. This is because the count is incremented before the full flag is checked in the write condition, so the count is 1 before the full flag is set.",
+        "suggested_fix": "Remove the increment of count when a write is performed and the FIFO is not full, and remove the decrement of count when a read is performed and the FIFO is not empty. Instead, set the full flag to 1 when the count equals DEPTH, and reset the count to 0 when a reset is detected."
+    },
+    {
+        "run_id": "bug_005",
+        "predicted_lines": [
+            24,
+            25,
+            31
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "The count register is reset to 1, but the empty flag is expected to be 1 after reset, which indicates that the count should be 0 after reset. This suggests that the reset block might be incorrectly setting the count.",
+        "suggested_fix": "count <= 0;"
+    }
+]
