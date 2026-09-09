@@ -32,8 +32,8 @@ module fifo #(
             data_out <= 0;
         end else begin
             if (wr_en && !full) begin
-                mem[wr_ptr] <= 0;
-                wr_ptr <= wr_ptr + 1;
+                mem[wr_ptr] <= data_in;
+                wr_ptr <= wr_ptr;
             end
             if (rd_en && !empty) begin
                 data_out <= mem[rd_ptr];

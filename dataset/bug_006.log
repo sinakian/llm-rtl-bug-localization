@@ -8,27 +8,27 @@ COCOTB_TEST_MODULES=test_fifo COCOTB_TESTCASE=  COCOTB_TOPLEVEL=fifo TOPLEVEL_LA
      -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/home/sina/agentic-verification/venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-x86_64-linux-gnu.so'
      -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.12.12 interpreter at /home/sina/agentic-verification/venv/bin/python3
      -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
-     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1788731150
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1788731152
      0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /home/sina/agentic-verification/venv/lib/python3.12/site-packages/cocotb
      0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 12.0 (stable)
      0.00ns INFO     cocotb.regression                  Running tests
      0.00ns INFO     cocotb.regression                  running test_fifo.comprehensive_fifo_test (1/1)
      0.00ns WARNING  py.warnings                        /home/sina/agentic-verification/tests/test_fifo.py:8: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
                                                           cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-   110.00ns WARNING  cocotb.regression                  test_fifo.comprehensive_fifo_test failed
+   100.00ns WARNING  cocotb.regression                  test_fifo.comprehensive_fifo_test failed
                                                         Traceback (most recent call last):
-                                                          File "/home/sina/agentic-verification/tests/test_fifo.py", line 41, in comprehensive_fifo_test
-                                                            assert dut.data_out.value == expected_val, f"Read {i}: Expected {expected_val}, got {dut.data_out.value}"
-                                                        AssertionError: Read 0: Expected 10, got 00000000
-                                                        assert LogicArray('00000000', Range(7, 'downto', 0)) == 10
-                                                         +  where LogicArray('00000000', Range(7, 'downto', 0)) = PackedObject(fifo.data_out).value
-                                                         +    where PackedObject(fifo.data_out) = HierarchyObject(fifo with definition fifo (at /home/sina/agentic-verification/src/fifo_buggy.v)).data_out
-   110.00ns INFO     cocotb.regression                  *******************************************************************************************
+                                                          File "/home/sina/agentic-verification/tests/test_fifo.py", line 33, in comprehensive_fifo_test
+                                                            assert dut.full.value == 1, f"Expected full=1 after 8 writes, got {dut.full.value}"
+                                                        AssertionError: Expected full=1 after 8 writes, got 0
+                                                        assert Logic('0') == 1
+                                                         +  where Logic('0') = LogicObject(fifo.full).value
+                                                         +    where LogicObject(fifo.full) = HierarchyObject(fifo with definition fifo (at /home/sina/agentic-verification/src/fifo_buggy.v)).full
+   100.00ns INFO     cocotb.regression                  *******************************************************************************************
                                                         ** TEST                               STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
                                                         *******************************************************************************************
-                                                        ** test_fifo.comprehensive_fifo_test   FAIL         110.00           0.00      89438.38  **
+                                                        ** test_fifo.comprehensive_fifo_test   FAIL         100.00           0.00     110187.13  **
                                                         *******************************************************************************************
-                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0                     110.00           0.00      51077.57  **
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0                     100.00           0.00      60102.40  **
                                                         *******************************************************************************************
 make: Leaving directory '/home/sina/agentic-verification/tests'
 /home/sina/agentic-verification/venv/lib/python3.12/site-packages/cocotb_tools/makefiles/simulators/Makefile.icarus:68: Using MODULE is deprecated, please use COCOTB_TEST_MODULES instead.

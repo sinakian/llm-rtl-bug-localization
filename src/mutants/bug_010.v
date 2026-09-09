@@ -32,7 +32,7 @@ module fifo #(
             data_out <= 0;
         end else begin
             if (wr_en && !full) begin
-                mem[wr_ptr] <= 0;
+                mem[wr_ptr] <= data_in;
                 wr_ptr <= wr_ptr + 1;
             end
             if (rd_en && !empty) begin
@@ -40,7 +40,7 @@ module fifo #(
                 rd_ptr <= rd_ptr + 1;
             end
             if (wr_en && !full && (!rd_en || empty))
-                count <= count + 1;
+                count <= count - 1;
             else if (rd_en && !empty && (!wr_en || full))
                 count <= count - 1;
         end

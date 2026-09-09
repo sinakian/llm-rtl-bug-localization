@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, END
 from agent_tools import parse_log, read_span, ast_trace_signal
 
 # ":3b" for a fast dev loop; "qwen2.5-coder:latest" (7B) or "llama3" for final numbers.
-MODEL_NAME = "qwen2.5-coder:3b"
+MODEL_NAME = "llama3:latest"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 TIMEOUT = 120
 

@@ -12,10 +12,130 @@
         "bug_type": "operator_flip"
     },
     {
+        "run_id": "bug_008",
+        "file": "src/mutants/bug_008.v",
+        "line": 25,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_009",
+        "file": "src/mutants/bug_009.v",
+        "line": 24,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_010",
+        "file": "src/mutants/bug_010.v",
+        "line": 43,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_011",
+        "file": "src/mutants/bug_011.v",
+        "line": 45,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_018",
+        "file": "src/mutants/bug_018.v",
+        "line": 39,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_019",
+        "file": "src/mutants/bug_019.v",
+        "line": 35,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_020",
+        "file": "src/mutants/bug_020.v",
+        "line": 34,
+        "bug_type": "operator_flip"
+    },
+    {
+        "run_id": "bug_021",
+        "file": "src/mutants/bug_021.v",
+        "line": 38,
+        "bug_type": "operator_flip"
+    },
+    {
         "run_id": "bug_003",
         "file": "src/mutants/bug_003.v",
         "line": 25,
         "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_006",
+        "file": "src/mutants/bug_006.v",
+        "line": 25,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_007",
+        "file": "src/mutants/bug_007.v",
+        "line": 24,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_012",
+        "file": "src/mutants/bug_012.v",
+        "line": 43,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_013",
+        "file": "src/mutants/bug_013.v",
+        "line": 36,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_014",
+        "file": "src/mutants/bug_014.v",
+        "line": 40,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_022",
+        "file": "src/mutants/bug_022.v",
+        "line": 39,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_029",
+        "file": "src/mutants/bug_029.v",
+        "line": 39,
+        "bug_type": "off_by_one"
+    },
+    {
+        "run_id": "bug_005",
+        "file": "src/mutants/bug_005.v",
+        "line": 31,
+        "bug_type": "wrong_reset"
+    },
+    {
+        "run_id": "bug_015",
+        "file": "src/mutants/bug_015.v",
+        "line": 31,
+        "bug_type": "wrong_reset"
+    },
+    {
+        "run_id": "bug_016",
+        "file": "src/mutants/bug_016.v",
+        "line": 29,
+        "bug_type": "wrong_reset"
+    },
+    {
+        "run_id": "bug_017",
+        "file": "src/mutants/bug_017.v",
+        "line": 30,
+        "bug_type": "wrong_reset"
+    },
+    {
+        "run_id": "bug_030",
+        "file": "src/mutants/bug_030.v",
+        "line": 31,
+        "bug_type": "wrong_reset"
     },
     {
         "run_id": "bug_004",
@@ -24,9 +144,39 @@
         "bug_type": "stuck_at"
     },
     {
-        "run_id": "bug_005",
-        "file": "src/mutants/bug_005.v",
-        "line": 31,
-        "bug_type": "wrong_reset"
+        "run_id": "bug_023",
+        "file": "src/mutants/bug_023.v",
+        "line": 43,
+        "bug_type": "stuck_at"
+    },
+    {
+        "run_id": "bug_024",
+        "file": "src/mutants/bug_024.v",
+        "line": 36,
+        "bug_type": "stuck_at"
+    },
+    {
+        "run_id": "bug_025",
+        "file": "src/mutants/bug_025.v",
+        "line": 40,
+        "bug_type": "stuck_at"
+    },
+    {
+        "run_id": "bug_026",
+        "file": "src/mutants/bug_026.v",
+        "line": 25,
+        "bug_type": "stuck_at"
+    },
+    {
+        "run_id": "bug_027",
+        "file": "src/mutants/bug_027.v",
+        "line": 24,
+        "bug_type": "stuck_at"
+    },
+    {
+        "run_id": "bug_028",
+        "file": "src/mutants/bug_028.v",
+        "line": 35,
+        "bug_type": "stuck_at"
     }
 ]

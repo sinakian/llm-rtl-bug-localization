@@ -1,0 +1,67 @@
+[
+    {
+        "run_id": "bug_001",
+        "predicted_lines": [
+            43,
+            45,
+            36,
+            25,
+            31
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "The failure stage is FILL, which suggests an off_by_one issue. The dataflow shows that the full flag is being set and unset based on the count, which is being incremented and decremented. The candidate lines include the assignments to count, wr_ptr, and rd_ptr, which could all be affected by an off_by_one issue.",
+        "suggested_fix": "Verify that the count is being incremented and decremented correctly, and that the full flag is being set and unset based on the correct value of the count."
+    },
+    {
+        "run_id": "bug_002",
+        "predicted_lines": [
+            43,
+            25,
+            31,
+            45,
+            29
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "The FILL stage is failing, and the issue is related to the full flag never asserting after the FIFO is filled. This suggests that the off_by_one predicted class is most likely, and the predicted line is line 43, where the count is incremented.",
+        "suggested_fix": "Review the code around line 43 and ensure that the count is being incremented correctly. Check for any logical errors or unexpected behavior that may be causing the full flag to never assert."
+    },
+    {
+        "run_id": "bug_003",
+        "predicted_lines": [
+            40,
+            36,
+            29,
+            30,
+            39
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "The failing assertion is due to a read returning the wrong data, which suggests an operator_flip issue. The data_out signal is driven by mem[rd_ptr] in line 39, and rd_ptr is incremented in line 40. This could be causing the data_out to be driven by the wrong value. Additionally, wr_ptr is also driven by a similar operation in lines 29-30, which could also be affected.",
+        "suggested_fix": "Inspect the logic controlling rd_ptr and wr_ptr to ensure they are using the correct operators. Verify that the pointers are being incremented/decremented correctly and that the data_out signal is being driven by the intended value."
+    },
+    {
+        "run_id": "bug_004",
+        "predicted_lines": [
+            43,
+            25,
+            45,
+            36,
+            31
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "The failure stage is FILL, and the full flag never asserts after the FIFO is filled. The candidate lines are all related to the write and count operations. The most likely cause is an off-by-one error in the write or count logic.",
+        "suggested_fix": "Inspect lines 36, 43, and 45 to ensure that the write pointer and count are being incremented and decremented correctly."
+    },
+    {
+        "run_id": "bug_005",
+        "predicted_lines": [
+            31,
+            43,
+            45,
+            24,
+            25
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "The failing assertion is that the `empty` flag is wrong immediately after reset. This suggests that the `count` register is not being reset correctly. The `count` register is only updated in the `WRITING` stage, which makes it likely that the `off_by_one` issue is present.",
+        "suggested_fix": "Try updating the `count` register in the `RESET` stage, for example by setting `count <= 0;` in line 28. This would ensure that the `empty` flag is correctly reset to 1 after the FIFO is reset."
+    }
+]

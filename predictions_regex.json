@@ -1,6 +1,48 @@
 [
     {
         "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_027"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_006"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_029"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_022"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_025"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_013"
+    },
+    {
+        "predicted_lines": [
             41
         ],
         "predicted_class": "assertion_failure",
@@ -15,6 +57,48 @@
     },
     {
         "predicted_lines": [
+            41
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_008"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_016"
+    },
+    {
+        "predicted_lines": [
+            23
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_015"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_028"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_010"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_018"
+    },
+    {
+        "predicted_lines": [
             23
         ],
         "predicted_class": "assertion_failure",
@@ -22,10 +106,101 @@
     },
     {
         "predicted_lines": [
+            23
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_009"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_019"
+    },
+    {
+        "predicted_lines": [
+            23
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_007"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_014"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_026"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_017"
+    },
+    {
+        "predicted_lines": [
             33
         ],
         "predicted_class": "assertion_failure",
         "run_id": "bug_001"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_021"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_024"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_023"
+    },
+    {
+        "predicted_lines": [
+            23
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_030"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_020"
+    },
+    {
+        "predicted_lines": [
+            33
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_011"
+    },
+    {
+        "predicted_lines": [
+            41
+        ],
+        "predicted_class": "assertion_failure",
+        "run_id": "bug_012"
     },
     {
         "predicted_lines": [

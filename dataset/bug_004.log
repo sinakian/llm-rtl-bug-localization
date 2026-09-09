@@ -8,7 +8,7 @@ COCOTB_TEST_MODULES=test_fifo COCOTB_TESTCASE=  COCOTB_TOPLEVEL=fifo TOPLEVEL_LA
      -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/home/sina/agentic-verification/venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-x86_64-linux-gnu.so'
      -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.12.12 interpreter at /home/sina/agentic-verification/venv/bin/python3
      -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
-     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1788726006
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1788731170
      0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /home/sina/agentic-verification/venv/lib/python3.12/site-packages/cocotb
      0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 12.0 (stable)
      0.00ns INFO     cocotb.regression                  Running tests
@@ -26,9 +26,9 @@ COCOTB_TEST_MODULES=test_fifo COCOTB_TESTCASE=  COCOTB_TOPLEVEL=fifo TOPLEVEL_LA
    100.00ns INFO     cocotb.regression                  *******************************************************************************************
                                                         ** TEST                               STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
                                                         *******************************************************************************************
-                                                        ** test_fifo.comprehensive_fifo_test   FAIL         100.00           0.00     104881.50  **
+                                                        ** test_fifo.comprehensive_fifo_test   FAIL         100.00           0.00     111065.57  **
                                                         *******************************************************************************************
-                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0                     100.00           0.00      56528.12  **
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0                     100.00           0.00      58906.48  **
                                                         *******************************************************************************************
 make: Leaving directory '/home/sina/agentic-verification/tests'
 /home/sina/agentic-verification/venv/lib/python3.12/site-packages/cocotb_tools/makefiles/simulators/Makefile.icarus:68: Using MODULE is deprecated, please use COCOTB_TEST_MODULES instead.
