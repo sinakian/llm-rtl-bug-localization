@@ -3,7 +3,7 @@ import json
 import requests
 from typing import TypedDict, List
 from langgraph.graph import StateGraph, END
-from agent_tools import parse_log, read_span, ast_trace_signal
+from agent_tools import parse_log, read_span, ast_trace_signal, find_condition_lines
 
 # ":3b" for a fast dev loop; "qwen2.5-coder:latest" (7B) or "llama3" for final numbers.
 MODEL_NAME = "qwen2.5-coder:latest"
@@ -15,22 +15,27 @@ _STRUCT_KW = re.compile(r"^\s*(always|begin|end|endmodule|module|else|if)\b")
 N_PRED = 5  # emit up to 5 ranked candidate lines so we can score recall@5
 
 
-def _is_structural(text: str) -> bool:
+def _is_structural(text: str, is_condition_line: bool = False) -> bool:
+    # A line found by find_condition_lines is a condition guard on purpose -- that's the
+    # whole point of tracing it (covers plain `if`, and compound forms like `else if`).
+    # Every other candidate line is still filtered exactly as before.
+    if is_condition_line:
+        return False
     t = text.strip()
     return (not t) or t.startswith(("`", "//")) or bool(_STRUCT_KW.match(text))
 
 
-def _keep_line(n: int, src: List[str]) -> bool:
-    return 1 <= n <= len(src) and not _is_structural(src[n - 1])
+def _keep_line(n: int, src: List[str], condition_lines=frozenset()) -> bool:
+    return 1 <= n <= len(src) and not _is_structural(src[n - 1], n in condition_lines)
 
 
-def _candidate_lines(ast_lines: List[int], src: List[str]) -> List[int]:
+def _candidate_lines(ast_lines: List[int], src: List[str], condition_lines=frozenset()) -> List[int]:
     """Full deterministic candidate set: keep-filtered, deduped, in the order
     gather_context_node produced them. Single source of truth — _coerce and the
     error-path fallback both call this instead of re-deriving the filter."""
     out, seen = [], set()
     for n in ast_lines:
-        if _keep_line(n, src) and n not in seen:
+        if _keep_line(n, src, condition_lines) and n not in seen:
             seen.add(n)
             out.append(n)
     return out
@@ -45,6 +50,7 @@ class AgentState(TypedDict):
     failure_class: str
     code_context: str
     ast_lines: List[int]
+    condition_lines: List[int]
     candidate_lines: List[int]
     predicted_lines: List[int]
     rationale: str
@@ -70,11 +76,18 @@ def _stage_signals(log_summary: str) -> list:
     ranks within this candidate set (recall@5 measures whether the true line is in it)."""
     s = log_summary.upper()
     if "RESET STAGE" in s:
+        # Checked immediately after reset, before any mem access -- a memory-array bug
+        # can't be the cause of a wrong empty flag here, so "mem" is deliberately omitted.
         return ["empty", "full", "count"]
     if "FILL STAGE" in s:
-        return ["full", "count", "wr_ptr", "rd_ptr", "data_out"]
+        # Full-flag/pointer/counter bugs are the obvious causes, but a write landing in the
+        # wrong mem cell (or a stuck-at value) can also trip this assertion, and the empty
+        # flag can be wrongly held/cleared during fill too.
+        return ["full", "count", "wr_ptr", "rd_ptr", "data_out", "empty", "mem"]
     if "READBACK STAGE" in s:
-        return ["data_out", "rd_ptr", "wr_ptr", "count", "full"]
+        # A wrong read can be a read-path bug (rd_ptr/data_out) OR data corrupted on write
+        # (wrong mem cell, stuck value) that only surfaces once that cell is read back.
+        return ["data_out", "rd_ptr", "wr_ptr", "count", "full", "mem"]
     return ["count", "full", "data_out", "wr_ptr", "rd_ptr"]
 
 
@@ -87,13 +100,28 @@ def gather_context_node(state: AgentState) -> dict:
     print("  [gather_context]", flush=True)
     signals = _stage_signals(state["log_summary"])
 
-    traces, ast_lines = [], []
+    assign_traces, assign_lines = [], []
     for sig in signals:
         t = ast_trace_signal(state["verilog_path"], sig, top_module="fifo")
         nums = [int(n) for n in re.findall(r"Line (\d+):", t)]
         if nums:
-            traces.append(t)
-            ast_lines.extend(nums)
+            assign_traces.append(t)
+            assign_lines.extend(nums)
+
+    cond_traces, cond_lines = [], []
+    for sig in signals:
+        c = find_condition_lines(state["verilog_path"], sig)
+        nums = [int(n) for n in re.findall(r"Line (\d+):", c)]
+        if nums:
+            cond_traces.append(c)
+            cond_lines.extend(nums)
+
+    # Assignment lines first, then condition lines, deduped with order preserved.
+    ast_lines, seen = [], set()
+    for n in assign_lines + cond_lines:
+        if n not in seen:
+            seen.add(n)
+            ast_lines.append(n)
 
     src = _src_lines(state["verilog_path"])
     full_code = read_span(state["verilog_path"], 1, len(src))
@@ -102,11 +130,14 @@ def gather_context_node(state: AgentState) -> dict:
 {full_code}
 
 --- Deterministic dataflow for the failing signals {signals} ---
-{chr(10).join(traces)}"""
-    return {"code_context": context, "ast_lines": ast_lines}
+{chr(10).join(assign_traces)}
+
+--- Conditions guarding the failing signals {signals} ---
+{chr(10).join(cond_traces) if cond_traces else "(none found)"}"""
+    return {"code_context": context, "ast_lines": ast_lines, "condition_lines": sorted(set(cond_lines))}
 
 
-def _coerce(raw: str, src: List[str], ast_lines: List[int]) -> dict:
+def _coerce(raw: str, src: List[str], ast_lines: List[int], condition_lines: List[int] = ()) -> dict:
     data = {}
     try:
         data = json.loads(raw)
@@ -128,8 +159,9 @@ def _coerce(raw: str, src: List[str], ast_lines: List[int]) -> dict:
         except Exception:
             pass
 
-    # Candidate set = deterministic assignment lines for the stage's signals.
-    candidate_lines = _candidate_lines(ast_lines, src)
+    # Candidate set = deterministic assignment + condition lines for the stage's signals.
+    cond_set = set(condition_lines)
+    candidate_lines = _candidate_lines(ast_lines, src, cond_set)
     cand_set = set(candidate_lines)
 
     # The MODEL RANKS first (its judgement of which candidates are wrong), but restricted
@@ -143,7 +175,7 @@ def _coerce(raw: str, src: List[str], ast_lines: List[int]) -> dict:
         seen.add(n)
         merged.append(n)
     if not merged:                      # last resort, never emit garbage
-        merged = [n for n in model_lines if _keep_line(n, src)]
+        merged = [n for n in model_lines if _keep_line(n, src, cond_set)]
 
     cls = str(data.get("predicted_class", "")).strip().lower()
     cls = next((c for c in VALID_CLASSES if c in cls), "unknown")
@@ -186,11 +218,13 @@ Output ONLY this JSON:
   "rationale":"...","suggested_fix":"..."}}"""
     try:
         raw = _ollama(prompt, as_json=True, model=state["model"])
-        return _coerce(raw, _src_lines(state["verilog_path"]), state.get("ast_lines", []))
+        return _coerce(raw, _src_lines(state["verilog_path"]), state.get("ast_lines", []),
+                        state.get("condition_lines", []))
     except Exception as e:
         ast_lines = state.get("ast_lines", [])
         cand = [n for n in sorted(set(ast_lines))][:N_PRED]
-        candidate_lines = _candidate_lines(ast_lines, _src_lines(state["verilog_path"]))
+        candidate_lines = _candidate_lines(ast_lines, _src_lines(state["verilog_path"]),
+                                            set(state.get("condition_lines", [])))
         return {"failure_class": "unknown", "predicted_lines": cand,
                 "candidate_lines": candidate_lines,
                 "rationale": f"call failed: {e}", "suggested_fix": ""}
@@ -211,7 +245,8 @@ def triage_run(run_id: str, log_path: str, verilog_path: str, model: str = MODEL
     initial_state = {
         "run_id": run_id, "log_path": log_path, "verilog_path": verilog_path, "model": model,
         "log_summary": "", "failure_class": "", "code_context": "", "ast_lines": [],
-        "candidate_lines": [], "predicted_lines": [], "rationale": "", "suggested_fix": "",
+        "condition_lines": [], "candidate_lines": [], "predicted_lines": [], "rationale": "",
+        "suggested_fix": "",
     }
     final = app.invoke(initial_state)
     return {

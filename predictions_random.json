@@ -1,0 +1,392 @@
+[
+    {
+        "run_id": "bug_001",
+        "predicted_lines": [
+            24,
+            44,
+            36,
+            31,
+            39
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_002",
+        "predicted_lines": [
+            45,
+            40,
+            42,
+            24,
+            30
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_008",
+        "predicted_lines": [
+            39,
+            44,
+            42,
+            32,
+            30
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_009",
+        "predicted_lines": [
+            44,
+            38,
+            34,
+            25,
+            31
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_010",
+        "predicted_lines": [
+            36,
+            42,
+            38,
+            35,
+            29
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_011",
+        "predicted_lines": [
+            31,
+            30,
+            42,
+            43,
+            35
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_018",
+        "predicted_lines": [
+            44,
+            34,
+            30,
+            24,
+            32
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_019",
+        "predicted_lines": [
+            40,
+            36,
+            31,
+            25,
+            43
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_020",
+        "predicted_lines": [
+            40,
+            38,
+            35,
+            32,
+            43
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_021",
+        "predicted_lines": [
+            43,
+            45,
+            29,
+            30,
+            35
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_003",
+        "predicted_lines": [
+            29,
+            31,
+            43,
+            42,
+            45
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_006",
+        "predicted_lines": [
+            40,
+            43,
+            32,
+            30,
+            25
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_007",
+        "predicted_lines": [
+            44,
+            24,
+            42,
+            25,
+            34
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_012",
+        "predicted_lines": [
+            44,
+            25,
+            31,
+            39,
+            40
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_013",
+        "predicted_lines": [
+            31,
+            35,
+            34,
+            38,
+            40
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_014",
+        "predicted_lines": [
+            31,
+            25,
+            30,
+            24,
+            44
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_022",
+        "predicted_lines": [
+            31,
+            39,
+            34,
+            42,
+            29
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_029",
+        "predicted_lines": [
+            36,
+            30,
+            38,
+            42,
+            34
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_005",
+        "predicted_lines": [
+            34,
+            31,
+            45,
+            24,
+            44
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_015",
+        "predicted_lines": [
+            25,
+            31,
+            44,
+            45,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_016",
+        "predicted_lines": [
+            36,
+            32,
+            44,
+            38,
+            24
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_017",
+        "predicted_lines": [
+            40,
+            31,
+            30,
+            39,
+            24
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_030",
+        "predicted_lines": [
+            42,
+            34,
+            24,
+            44,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_004",
+        "predicted_lines": [
+            40,
+            45,
+            29,
+            30,
+            39
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_023",
+        "predicted_lines": [
+            36,
+            24,
+            42,
+            38,
+            30
+        ],
+        "predicted_class": "operator_flip",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_024",
+        "predicted_lines": [
+            32,
+            35,
+            30,
+            29,
+            43
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_025",
+        "predicted_lines": [
+            29,
+            42,
+            43,
+            30,
+            36
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_026",
+        "predicted_lines": [
+            40,
+            25,
+            44,
+            42,
+            29
+        ],
+        "predicted_class": "stuck_at",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_027",
+        "predicted_lines": [
+            36,
+            34,
+            29,
+            39,
+            43
+        ],
+        "predicted_class": "off_by_one",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    },
+    {
+        "run_id": "bug_028",
+        "predicted_lines": [
+            25,
+            35,
+            39,
+            24,
+            34
+        ],
+        "predicted_class": "wrong_reset",
+        "rationale": "random baseline: shuffled agent candidate_lines (seed=0)",
+        "suggested_fix": ""
+    }
+]

@@ -84,6 +84,34 @@ def recursive_trace(file_path: str, initial_signal: str, depth: int = 2) -> str:
     return "\n".join(f"{n}: {t}" for n, t in ordered) if ordered else f"No references to '{initial_signal}' found."
 
 
+def find_condition_lines(file_path: str, signal_name: str) -> str:
+    """Lines where the signal appears inside a CONDITION -- an `if (...)`, a ternary `?:`,
+    or a `while`/`case` expression -- rather than on the left-hand side of an assignment.
+
+    Same lightweight, version-independent regex approach as ast_trace_signal (no real
+    parser), and the same 'Line N: text' output format so callers can parse both traces
+    the same way (e.g. `re.findall(r"Line (\\d+):", t)`)."""
+    if not os.path.exists(file_path):
+        return f"Error: {file_path} not found."
+
+    sig_word = re.compile(rf"\b{re.escape(signal_name)}\b")
+    cond_kw = re.compile(r"\b(?:if|while|case)\s*\(([^)]*)\)")
+
+    hits = []
+    with open(file_path, "r") as f:
+        for i, line in enumerate(f, start=1):
+            matched = any(sig_word.search(m.group(1)) for m in cond_kw.finditer(line))
+            if not matched and "?" in line and ":" in line:
+                # Ternary: only the condition before '?' counts, not either branch.
+                matched = bool(sig_word.search(line[:line.index("?")]))
+            if matched:
+                hits.append(f"Line {i}: {line.strip()}")
+
+    if not hits:
+        return f"No condition referencing '{signal_name}' found."
+    return "\n".join(hits)
+
+
 def ast_trace_signal(file_path: str, signal_name: str, top_module: str = "fifo") -> str:
     """Deterministic dataflow: find the source line(s) where a signal is ASSIGNED.
 
