@@ -1,3 +1,4 @@
+import os
 import json
 import random
 import argparse
@@ -8,6 +9,7 @@ from agent import VALID_CLASSES
 N_PRED = 5
 N_SEEDS = 100
 TOL = 2
+RESULTS_DIR = "results"
 METRIC_KEYS = ["top1", "top3", "top3_tol", "recall5", "class"]
 
 
@@ -163,10 +165,13 @@ def load_labels_and_candidates(agent_predictions_path, labels_path="dataset/labe
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--agent-predictions", default="predictions_agent.json",
+    ap.add_argument("--agent-predictions", default=f"{RESULTS_DIR}/predictions_qwen2.5-coder-latest_seed0.json",
                      help="source of per-run candidate_lines (the agent's deterministic candidate set)")
     ap.add_argument("--labels", default="dataset/labels.json")
-    ap.add_argument("--out", default="predictions_random.json")
+    ap.add_argument("--out", default=f"{RESULTS_DIR}/random_sample_seed0.json",
+                     help="where to write the seed-0 sample predictions file. Deliberately NOT named "
+                          "predictions_*.json -- it's a diagnostic sample, not a scored method, and "
+                          "compare_all.py's discovery would otherwise need to exclude it explicitly")
     ap.add_argument("--seeds", type=int, default=N_SEEDS)
     args = ap.parse_args()
 
@@ -175,6 +180,7 @@ def main():
     print_diagnostics(labels, candidates)
 
     preds_seed0, _ = run_for_seed(labels, candidates, seed=0)
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w") as f:
         json.dump(list(preds_seed0.values()), f, indent=4)
     print(f"Wrote {args.out} (seed=0)\n")

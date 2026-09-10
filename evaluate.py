@@ -1,7 +1,9 @@
+import os
 import json
 import argparse
 
 RATE_KEYS = ["top1", "top3", "top3_tol", "recall5", "class"]
+RESULTS_DIR = "results"
 
 
 def load(path):
@@ -128,14 +130,14 @@ def print_confusion(cats, confusion):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("predictions", nargs="?", default="predictions_agent.json",
-                    help="predictions file to score (default: predictions_agent.json)")
+    ap.add_argument("predictions", nargs="?", default=f"{RESULTS_DIR}/predictions_agent.json",
+                    help=f"predictions file to score (default: {RESULTS_DIR}/predictions_agent.json)")
     ap.add_argument("--labels", default="dataset/labels.json")
     ap.add_argument("--tol", type=int, default=2, help="line tolerance for the tolerant metric")
     ap.add_argument("--confusion", action="store_true",
                      help="print a predicted-vs-true bug-class confusion matrix")
-    ap.add_argument("--json", nargs="?", const="metrics.json", default=None, metavar="PATH",
-                     help="dump all metrics to this JSON file (default: metrics.json)")
+    ap.add_argument("--json", nargs="?", const=f"{RESULTS_DIR}/metrics.json", default=None, metavar="PATH",
+                     help=f"dump all metrics to this JSON file (default: {RESULTS_DIR}/metrics.json)")
     args = ap.parse_args()
 
     cats, tot, rows, confusion = score(args.predictions, args.labels, args.tol)
@@ -148,6 +150,7 @@ def main():
         print_confusion(cats, confusion)
 
     if args.json:
+        os.makedirs(os.path.dirname(args.json) or ".", exist_ok=True)
         metrics_out = {
             "predictions": args.predictions,
             "labels": args.labels,

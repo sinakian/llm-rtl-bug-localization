@@ -6,6 +6,7 @@ from agent import triage_run, MODEL_NAME
 
 DATASET_DIR = "dataset"
 LABELS_FILE = "dataset/labels.json"
+RESULTS_DIR = "results"
 
 def safe_model_name(model):
     return re.sub(r"[^A-Za-z0-9._-]+", "-", model)
@@ -31,8 +32,9 @@ def main():
                     help="Ollama sampling seed, paired with temperature=0 (default: 0)")
     ap.add_argument("--repeats", type=int, default=None,
                     help="run the whole 30-case sweep this many times with seeds 0..N-1, "
-                         "writing predictions_<model>_seed<k>.json each time (ignores --out)")
-    ap.add_argument("--out", default="predictions_agent.json")
+                         f"writing {RESULTS_DIR}/predictions_<model>_seed<k>.json each time "
+                         "(ignores --out)")
+    ap.add_argument("--out", default=f"{RESULTS_DIR}/predictions_agent.json")
     args = ap.parse_args()
 
     # Map run_id -> that case's OWN mutant file (the fix: no single hardcoded file)
@@ -40,11 +42,12 @@ def main():
         labels = {x["run_id"]: x for x in json.load(f)}
 
     log_files = sorted(f for f in os.listdir(DATASET_DIR) if f.endswith(".log"))
+    os.makedirs(RESULTS_DIR, exist_ok=True)
 
     if args.repeats:
         for k in range(args.repeats):
             predictions = run_sweep(labels, log_files, args.model, k)
-            out_path = f"predictions_{safe_model_name(args.model)}_seed{k}.json"
+            out_path = f"{RESULTS_DIR}/predictions_{safe_model_name(args.model)}_seed{k}.json"
             with open(out_path, "w") as f:
                 json.dump(predictions, f, indent=4)
             print(f"\nAgent triage complete ({args.model}, seed={k}) -> {out_path}")

@@ -118,11 +118,12 @@ dataset. `agent (Qwen2.5-Coder 7B)` and `agent (Llama-3 8B)` are each averaged o
 | agent_v1 | 10 | 83% | 17% | 33% | 0.26 | 40% | 30% |
 | agent (Qwen2.5-Coder 7B) (3 seeds) | 16 | 100% | 22%±2% | 39%±2% | 0.31±0.01 | 43%±0% | 26%±2% |
 
-> `agent_v1` predates the `temperature=0`/fixed-seed change (Section 8): it was generated with
-> Ollama's default sampling temperature (0.8) and no recorded seed, so it is a single,
-> non-reproducible run, not a seed-averaged figure like the v2 rows next to it. Its numbers
-> should be read as "what one uncontrolled run looked like," not compared statistically against
-> the `±` figures elsewhere in this document.
+> `agent_v1` (`results/predictions_agent_v1_temp0.8.json` — the temperature is in the filename
+> for exactly this reason) predates the `temperature=0`/fixed-seed change (Section 8): it was
+> generated with Ollama's default sampling temperature (0.8) and no recorded seed, so it is a
+> single, non-reproducible run, not a seed-averaged figure like the v2 rows next to it. Its
+> numbers should be read as "what one uncontrolled run looked like," not compared statistically
+> against the `±` figures elsewhere in this document.
 
 ## 6. How to read these numbers
 
@@ -174,19 +175,23 @@ python inject_bug.py
 
 # Baselines
 python regex_baseline.py
-python single_shot_baseline.py --model qwen2.5-coder:latest --seed 0 --out predictions_singleshot_7b.json
+python single_shot_baseline.py --model qwen2.5-coder:latest --seed 0 --out results/predictions_singleshot_7b.json
 
-# Agent, 3 seeds per model (writes predictions_<model>_seed<k>.json)
+# Agent, 3 seeds per model (writes results/predictions_<model>_seed<k>.json)
 python run_agent_eval.py --model qwen2.5-coder:latest --repeats 3
 python run_agent_eval.py --model llama3:latest --repeats 3
 
 # Random-in-candidates control (100 seeds, sourced from one agent run's candidate_lines)
-python random_baseline.py --agent-predictions predictions_qwen2.5-coder-latest_seed0.json --seeds 100
+python random_baseline.py --agent-predictions results/predictions_qwen2.5-coder-latest_seed0.json --seeds 100
 
 # Score one predictions file, or compare everything at once
-python evaluate.py predictions_qwen2.5-coder-latest_seed0.json --confusion --json metrics.json
+python evaluate.py results/predictions_qwen2.5-coder-latest_seed0.json --confusion --json results/metrics.json
 python compare_all.py --seeds 100
 ```
+
+All predictions files and `metrics.json` live under `results/`; every script's default output
+path already points there, so none of the `--out`/`--agent-predictions` flags above are strictly
+required — they're shown for clarity about which file feeds which step.
 
 Every LLM call in `agent.py` and `single_shot_baseline.py` is made with `"options":
 {"temperature": 0, "seed": <seed>}`, and every prediction in every output file records both

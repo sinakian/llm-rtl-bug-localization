@@ -4,6 +4,7 @@ import json
 import argparse
 
 DATASET_DIR = "dataset"
+RESULTS_DIR = "results"
 
 def parse_log_for_baseline(log_path):
     with open(log_path, "r") as f:
@@ -35,7 +36,7 @@ def parse_log_for_baseline(log_path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="predictions_regex.json")
+    ap.add_argument("--out", default=f"{RESULTS_DIR}/predictions_regex.json")
     args = ap.parse_args()
 
     predictions = []
@@ -46,6 +47,7 @@ def main():
             result["run_id"] = run_id
             predictions.append(result)
 
+    os.makedirs(RESULTS_DIR, exist_ok=True)
     with open(args.out, "w") as f:
         json.dump(predictions, f, indent=4)
     print(f"Regex baseline predictions -> {args.out}")

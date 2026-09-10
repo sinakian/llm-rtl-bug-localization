@@ -6,24 +6,25 @@ import statistics
 import evaluate
 import random_baseline
 
-# Known predictions_*.json -> display label, in the row order the user wants.
-# Multiple filenames can map to the same label (e.g. the un-suffixed default
-# output uses whichever model is currently the default in that baseline).
+RESULTS_DIR = "results"
+
+# Known predictions_*.json -> display label, in the row order the user wants. Matched
+# against os.path.basename(path) in label_for(), so these stay bare filenames regardless
+# of which directory discover() globs (see RESULTS_DIR). Deliberately does NOT include any
+# entry for "agent-qwen"/"agent-llama3": those two labels are only ever satisfied by a
+# multi-seed group (see AGENT_LABELS/resolve_method below), never a single file, so there's
+# no filename fallback to silently score an unrelated single run in the group's place.
 FILE_LABELS = [
     ("predictions_regex.json", "regex"),
     ("predictions_singleshot_7b.json", "singleshot-7b"),
-    ("predictions_agent_qwen.json", "agent-qwen"),
-    ("predictions_agent_llama3.json", "agent-llama3"),
-    ("predictions_agent.json", "agent-qwen"),                  # default MODEL_NAME is qwen2.5-coder:latest
 ]
 FILE_LABEL_MAP = dict(FILE_LABELS)
 
-# predictions_singleshot_7b_v1.json is a byte-for-byte duplicate of predictions_singleshot_7b.json
-# -- never its own row. predictions_random.json is a single seed-0 snapshot -- the "random" row
-# is computed live via seed-averaging instead (see main()), so the file is never scored directly.
-EXCLUDED_FILES = {"predictions_singleshot_7b_v1.json", "predictions_random.json"}
-
 MAIN_ROW_ORDER = ["random", "regex", "singleshot-7b", "agent-qwen", "agent-llama3"]
+
+# Labels that MUST come from a multi-seed group (run_agent_eval.py --repeats), never a
+# single-file fallback -- see resolve_method.
+AGENT_LABELS = {"agent-qwen", "agent-llama3"}
 
 DISPLAY_NAMES = {
     "random": "random-in-candidates",
@@ -39,7 +40,7 @@ DISPLAY_NAMES = {
 # / "agent_llama3" marker of its own).
 AGENT_LABEL_BY_MODEL_SUBSTRING = [("qwen", "agent-qwen"), ("llama", "agent-llama3")]
 
-AGENT_V1_FILE = "predictions_agent_v1.json"
+AGENT_V1_FILE = f"{RESULTS_DIR}/predictions_agent_v1_temp0.8.json"
 
 
 def label_for(filename):
@@ -49,14 +50,16 @@ def label_for(filename):
     return stem
 
 
-def discover(pattern="predictions_*.json"):
-    """predictions_*.json present (minus EXCLUDED_FILES) -> {label: path}, preferring the
-    more explicit filename when two files would map to the same label."""
+def discover(pattern=f"{RESULTS_DIR}/predictions_*.json"):
+    """results/predictions_*.json present -> {label: path}, preferring the more explicit
+    filename when two files would map to the same label. random_sample_seed0.json doesn't
+    match this glob at all (no "predictions_" prefix), so it needs no exclusion.
+    predictions_agent_v1_temp0.8.json DOES match and gets picked up under a harmless
+    fallback label ("agent_v1_temp0.8") that MAIN_ROW_ORDER never uses -- the second table
+    reads it directly via AGENT_V1_FILE instead of through this dict."""
     by_label = {}
     for path in sorted(glob.glob(pattern)):
         fname = os.path.basename(path)
-        if fname in EXCLUDED_FILES:
-            continue
         label = label_for(fname)
         if label in by_label and len(os.path.basename(by_label[label])) >= len(fname):
             continue
@@ -72,7 +75,7 @@ def label_for_model(model_name):
     return None
 
 
-def discover_seed_groups(pattern="predictions_*_seed*.json"):
+def discover_seed_groups(pattern=f"{RESULTS_DIR}/predictions_*_seed*.json"):
     """label -> sorted list of seed-run file paths, one run_agent_eval.py --repeats
     produced per seed. Grouped by the 'model' field recorded inside each file rather
     than the filename (see AGENT_LABEL_BY_MODEL_SUBSTRING)."""
@@ -104,15 +107,28 @@ def aggregate_rates(rate_dicts):
 
 def resolve_method(label, by_label, seed_groups, labels_path, tol):
     """(rates, paths) for a label -- rates is evaluate.rates()'s plain-float dict for a
-    single file, or an aggregate_rates() {metric: (mean, std)} dict when 2+ seed files
-    were found for this label. len(paths) tells the caller how many seeds went in."""
-    if label in seed_groups and len(seed_groups[label]) > 1:
-        paths = seed_groups[label]
+    single file, or an aggregate_rates() {metric: (mean, std)} dict for a multi-seed group.
+    len(paths) tells the caller how many seeds went in.
+
+    AGENT_LABELS ("agent-qwen"/"agent-llama3") have NO single-file fallback: if the
+    multi-seed group is missing or incomplete, this raises rather than silently scoring
+    some other, unrelated single run under that name (e.g. a stale default-output file)."""
+    if label in AGENT_LABELS:
+        paths = seed_groups.get(label, [])
+        if len(paths) < 2:
+            raise SystemExit(
+                f"{label!r} needs a multi-seed group (2+ files matching "
+                f"{RESULTS_DIR}/predictions_*_seed*.json whose 'model' field resolves to "
+                f"{label!r}), found {len(paths)}. Run "
+                f"`python run_agent_eval.py --model <model> --repeats 3` to generate one -- "
+                f"there is no single-file fallback for this label."
+            )
         per_file = []
         for p in paths:
             _, tot, _, _ = evaluate.score(p, labels_path, tol)
             per_file.append(evaluate.rates(tot))
         return aggregate_rates(per_file), paths
+
     path = by_label[label]
     _, tot, _, _ = evaluate.score(path, labels_path, tol)
     return evaluate.rates(tot), [path]
@@ -172,11 +188,18 @@ def main():
     seed_groups = discover_seed_groups()
 
     def available(label):
-        return label in by_label or len(seed_groups.get(label, [])) > 1
+        if label in AGENT_LABELS:
+            return len(seed_groups.get(label, [])) >= 2
+        return label in by_label
 
     missing_rows = [l for l in MAIN_ROW_ORDER if l != "random" and not available(l)]
     if missing_rows:
-        raise SystemExit(f"No predictions_*.json found for: {', '.join(missing_rows)}")
+        raise SystemExit(
+            f"Missing results for: {', '.join(missing_rows)}. Agent labels "
+            f"({', '.join(sorted(AGENT_LABELS))}) need a multi-seed group under "
+            f"{RESULTS_DIR}/ (see run_agent_eval.py --repeats); others need their named "
+            f"predictions_*.json under {RESULTS_DIR}/."
+        )
 
     lines = [
         "**Baseline comparison** (v2 / 16-candidate sets)",

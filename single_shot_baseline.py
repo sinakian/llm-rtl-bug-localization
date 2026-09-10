@@ -5,6 +5,7 @@ import requests
 
 DATASET_DIR = "dataset"
 LABELS_FILE = "dataset/labels.json"
+RESULTS_DIR = "results"
 OLLAMA_MODEL = "qwen2.5-coder:latest"   # deliberately small: this is the weak baseline to beat
 OLLAMA_URL = "http://localhost:11434/api/generate"
 TIMEOUT = 120
@@ -61,7 +62,7 @@ def main():
     ap.add_argument("--model", default=OLLAMA_MODEL)
     ap.add_argument("--seed", type=int, default=0,
                     help="Ollama sampling seed, paired with temperature=0 (default: 0)")
-    ap.add_argument("--out", default="predictions_singleshot.json")
+    ap.add_argument("--out", default=f"{RESULTS_DIR}/predictions_singleshot.json")
     args = ap.parse_args()
 
     with open(LABELS_FILE) as f:
@@ -85,6 +86,7 @@ def main():
         result["seed"] = args.seed
         predictions.append(result)
 
+    os.makedirs(RESULTS_DIR, exist_ok=True)
     with open(args.out, "w") as f:
         json.dump(predictions, f, indent=4)
     print(f"Single-shot predictions -> {args.out}")
