@@ -4,6 +4,10 @@ import argparse
 
 RATE_KEYS = ["top1", "top3", "top3_tol", "recall5", "class"]
 RESULTS_DIR = "results"
+# There is no results/predictions_agent.json -- it was deleted as a silent-fallback risk
+# once the 3-seed group existed (see results/README.md). Default to one of the seed files
+# instead of a name that would resolve to nothing.
+DEFAULT_PREDICTIONS = f"{RESULTS_DIR}/predictions_qwen2.5-coder-latest_seed0.json"
 
 
 def load(path):
@@ -130,8 +134,8 @@ def print_confusion(cats, confusion):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("predictions", nargs="?", default=f"{RESULTS_DIR}/predictions_agent.json",
-                    help=f"predictions file to score (default: {RESULTS_DIR}/predictions_agent.json)")
+    ap.add_argument("predictions", nargs="?", default=DEFAULT_PREDICTIONS,
+                    help=f"predictions file to score (default: {DEFAULT_PREDICTIONS})")
     ap.add_argument("--labels", default="dataset/labels.json")
     ap.add_argument("--tol", type=int, default=2, help="line tolerance for the tolerant metric")
     ap.add_argument("--confusion", action="store_true",
