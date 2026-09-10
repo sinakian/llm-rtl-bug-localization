@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, END
 from agent_tools import parse_log, read_span, ast_trace_signal
 
 # ":3b" for a fast dev loop; "qwen2.5-coder:latest" (7B) or "llama3" for final numbers.
-MODEL_NAME = "llama3:latest"
+MODEL_NAME = "qwen2.5-coder:latest"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 TIMEOUT = 120
 
@@ -20,21 +20,39 @@ def _is_structural(text: str) -> bool:
     return (not t) or t.startswith(("`", "//")) or bool(_STRUCT_KW.match(text))
 
 
+def _keep_line(n: int, src: List[str]) -> bool:
+    return 1 <= n <= len(src) and not _is_structural(src[n - 1])
+
+
+def _candidate_lines(ast_lines: List[int], src: List[str]) -> List[int]:
+    """Full deterministic candidate set: keep-filtered, deduped, in the order
+    gather_context_node produced them. Single source of truth — _coerce and the
+    error-path fallback both call this instead of re-deriving the filter."""
+    out, seen = [], set()
+    for n in ast_lines:
+        if _keep_line(n, src) and n not in seen:
+            seen.add(n)
+            out.append(n)
+    return out
+
+
 class AgentState(TypedDict):
     run_id: str
     log_path: str
     verilog_path: str
+    model: str
     log_summary: str
     failure_class: str
     code_context: str
     ast_lines: List[int]
+    candidate_lines: List[int]
     predicted_lines: List[int]
     rationale: str
     suggested_fix: str
 
 
-def _ollama(prompt: str, as_json: bool) -> str:
-    payload = {"model": MODEL_NAME, "prompt": prompt, "stream": False}
+def _ollama(prompt: str, as_json: bool, model: str = MODEL_NAME) -> str:
+    payload = {"model": model, "prompt": prompt, "stream": False}
     if as_json:
         payload["format"] = "json"
     r = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
@@ -110,25 +128,22 @@ def _coerce(raw: str, src: List[str], ast_lines: List[int]) -> dict:
         except Exception:
             pass
 
-    def keep(n):
-        return 1 <= n <= len(src) and not _is_structural(src[n - 1])
-
     # Candidate set = deterministic assignment lines for the stage's signals.
-    cand = [n for n in ast_lines if keep(n)]
-    cand_set = set(cand)
+    candidate_lines = _candidate_lines(ast_lines, src)
+    cand_set = set(candidate_lines)
 
     # The MODEL RANKS first (its judgement of which candidates are wrong), but restricted
     # to real candidate lines so a weak model can't inject hallucinated line numbers.
     # Remaining candidates are appended as a deterministic backstop for recall.
     ranked = [n for n in model_lines if n in cand_set]
     merged, seen = [], set()
-    for n in ranked + cand:
+    for n in ranked + candidate_lines:
         if n in seen:
             continue
         seen.add(n)
         merged.append(n)
     if not merged:                      # last resort, never emit garbage
-        merged = [n for n in model_lines if keep(n)]
+        merged = [n for n in model_lines if _keep_line(n, src)]
 
     cls = str(data.get("predicted_class", "")).strip().lower()
     cls = next((c for c in VALID_CLASSES if c in cls), "unknown")
@@ -136,6 +151,7 @@ def _coerce(raw: str, src: List[str], ast_lines: List[int]) -> dict:
     return {
         "failure_class": cls,
         "predicted_lines": merged[:N_PRED],
+        "candidate_lines": candidate_lines,
         "rationale": str(data.get("rationale", ""))[:500],
         "suggested_fix": str(data.get("suggested_fix", ""))[:300],
     }
@@ -169,11 +185,14 @@ Output ONLY this JSON:
   "predicted_lines":[most_likely, ...up to 5],
   "rationale":"...","suggested_fix":"..."}}"""
     try:
-        raw = _ollama(prompt, as_json=True)
+        raw = _ollama(prompt, as_json=True, model=state["model"])
         return _coerce(raw, _src_lines(state["verilog_path"]), state.get("ast_lines", []))
     except Exception as e:
-        cand = [n for n in sorted(set(state.get("ast_lines", [])))][:N_PRED]
+        ast_lines = state.get("ast_lines", [])
+        cand = [n for n in sorted(set(ast_lines))][:N_PRED]
+        candidate_lines = _candidate_lines(ast_lines, _src_lines(state["verilog_path"]))
         return {"failure_class": "unknown", "predicted_lines": cand,
+                "candidate_lines": candidate_lines,
                 "rationale": f"call failed: {e}", "suggested_fix": ""}
 
 
@@ -188,16 +207,18 @@ workflow.add_edge("hypothesize_emit", END)
 app = workflow.compile()
 
 
-def triage_run(run_id: str, log_path: str, verilog_path: str) -> dict:
+def triage_run(run_id: str, log_path: str, verilog_path: str, model: str = MODEL_NAME) -> dict:
     initial_state = {
-        "run_id": run_id, "log_path": log_path, "verilog_path": verilog_path,
+        "run_id": run_id, "log_path": log_path, "verilog_path": verilog_path, "model": model,
         "log_summary": "", "failure_class": "", "code_context": "", "ast_lines": [],
-        "predicted_lines": [], "rationale": "", "suggested_fix": "",
+        "candidate_lines": [], "predicted_lines": [], "rationale": "", "suggested_fix": "",
     }
     final = app.invoke(initial_state)
     return {
         "run_id": run_id,
+        "model": model,
         "predicted_lines": final["predicted_lines"],
+        "candidate_lines": final["candidate_lines"],
         "predicted_class": final["failure_class"],
         "rationale": final["rationale"],
         "suggested_fix": final["suggested_fix"],

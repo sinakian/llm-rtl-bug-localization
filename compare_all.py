@@ -13,7 +13,7 @@ FILE_LABELS = [
     ("predictions_singleshot_7b.json", "singleshot-7b"),
     ("predictions_agent_qwen.json", "agent-qwen"),
     ("predictions_agent_llama3.json", "agent-llama3"),
-    ("predictions_agent.json", "agent-llama3"),                # default MODEL_NAME is llama3
+    ("predictions_agent.json", "agent-qwen"),                  # default MODEL_NAME is qwen2.5-coder:latest
 ]
 FILE_LABEL_MAP = dict(FILE_LABELS)
 

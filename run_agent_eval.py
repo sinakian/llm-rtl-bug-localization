@@ -1,13 +1,15 @@
 import os
 import json
 import argparse
-from agent import triage_run
+from agent import triage_run, MODEL_NAME
 
 DATASET_DIR = "dataset"
 LABELS_FILE = "dataset/labels.json"
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default=MODEL_NAME,
+                    help=f"Ollama model to use, overriding agent.MODEL_NAME (default: {MODEL_NAME})")
     ap.add_argument("--out", default="predictions_agent.json")
     args = ap.parse_args()
 
@@ -25,12 +27,12 @@ def main():
             continue
         log_path = os.path.join(DATASET_DIR, file)
         verilog_path = labels[run_id]["file"]      # per-case mutant path
-        print(f"Running agent on {run_id}  (src={verilog_path}) ...")
-        predictions.append(triage_run(run_id, log_path, verilog_path))
+        print(f"Running agent on {run_id}  (model={args.model}, src={verilog_path}) ...")
+        predictions.append(triage_run(run_id, log_path, verilog_path, model=args.model))
 
     with open(args.out, "w") as f:
         json.dump(predictions, f, indent=4)
-    print(f"\nAgent triage complete -> {args.out}")
+    print(f"\nAgent triage complete ({args.model}) -> {args.out}")
 
 if __name__ == "__main__":
     main()
