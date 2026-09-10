@@ -1,8 +1,11 @@
+import os
+import sys
 import re
 import json
 import time
 import argparse
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 from agent import (
     classify_node, gather_context_node, _stage_signals, _src_lines, _candidate_lines, MODEL_NAME,
 )

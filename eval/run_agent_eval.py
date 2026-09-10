@@ -1,7 +1,10 @@
 import os
 import re
+import sys
 import json
 import argparse
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 from agent import triage_run, MODEL_NAME
 
 DATASET_DIR = "dataset"

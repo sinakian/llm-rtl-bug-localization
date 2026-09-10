@@ -1,9 +1,11 @@
 import os
+import sys
 import json
 import random
 import argparse
 import statistics
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 from agent import VALID_CLASSES
 
 N_PRED = 5

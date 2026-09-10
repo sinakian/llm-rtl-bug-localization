@@ -17,44 +17,33 @@ cost of only covering the bug types you chose to inject, and only as many mutant
 
 ## 2. Architecture
 
-The agent (`agent.py`) is a 3-node LangGraph pipeline. Two of the three nodes are pure,
+The agent (`src/agent.py`) is a 3-node LangGraph pipeline. Two of the three nodes are pure,
 deterministic code; only the last one calls an LLM, and even that call is constrained by
 deterministic post-processing:
 
 ```mermaid
-flowchart TD
-    IN["failing log + mutant RTL"]
+flowchart LR
+    A["failing log<br/>+ RTL"] --> B["deterministic<br/>retrieval"]
+    B --> C["16 candidate lines<br/>(true line always in)"]
+    C --> D["LLM<br/>ranks them"]
+    D --> E["top 5<br/>+ bug class"]
 
-    subgraph DET["deterministic — no model in the loop"]
-        A["classify<br/>parse_log → failure stage<br/>RESET / FILL / READBACK"]
-        B["gather_context<br/>stage → signal list →<br/>assignment lines + guard conditions"]
-    end
-
-    CAND[["candidate_lines<br/>100% coverage · median 16 of ~52"]]
-
-    LLM["hypothesize — LLM call<br/>rank the candidates,<br/>name the bug class"]
-
-    CO["_coerce — deterministic<br/>drop anything not in the set,<br/>append unranked candidates"]
-
-    OUT["predicted_lines[1..5] + predicted_class"]
-
-    IN --> A --> B --> CAND --> LLM --> CO --> OUT
-    CAND -. "closed set — the model cannot add a line" .-> CO
-
-    style LLM fill:#ffe8cc,stroke:#d97706
-    style CAND fill:#e0f2fe,stroke:#0284c7
+    style D stroke:#d97706,stroke-width:4px
+    style C stroke:#0284c7,stroke-width:4px
 ```
 
-`classify` and `gather_context` are regex/AST-adjacent retrieval with no model in the loop, and
-together they produce the closed `candidate_lines` set. `hypothesize` is the only LLM call, and
-its only degree of freedom is re-ordering that fixed set plus naming a bug class. `_coerce` then
-enforces the closure: anything the model predicts outside `candidate_lines` is dropped, never
-emitted.
+`classify` and `gather_context` are the "deterministic retrieval" box above: regex/AST-adjacent
+code with no model in the loop. `classify` runs `parse_log` to turn the failing log into a
+failure stage; `gather_context` maps that stage to signals (`_stage_signals`) and traces each
+one's assignment sites (`ast_trace_signal`) and guard conditions (`find_condition_lines`) to
+build the closed `candidate_lines` set. `hypothesize` is the only LLM call, and its only degree
+of freedom is re-ordering that fixed set plus naming a bug class. `_coerce` then enforces the
+closure: anything the model predicts outside `candidate_lines` is dropped, never emitted.
 
 ## 3. Dataset
 
 30 single-line mutants across 4 bug classes, injected into a SystemVerilog FIFO
-(`src/fifo.v`) by `inject_bug.py`:
+(`src/fifo.v`) by `src/inject_bug.py`:
 
 | Bug class       | Count |
 |-----------------|------:|
@@ -97,7 +86,7 @@ model cannot report a line number that was never a real candidate.
 
 ## 5. Results
 
-Both tables below are the verbatim output of `compare_all.py --seeds 100` against the current
+Both tables below are the verbatim output of `eval/compare_all.py --seeds 100` against the current
 dataset. `agent (Qwen2.5-Coder 7B)` and `agent (Llama-3 8B)` are each averaged over 3 seeds
 (0, 1, 2) at `temperature=0`; `±` is the standard deviation across those seeds.
 
@@ -171,29 +160,29 @@ dataset. `agent (Qwen2.5-Coder 7B)` and `agent (Llama-3 8B)` are each averaged o
 source venv/bin/activate
 
 # Regenerate the mutant dataset (mutants + per-case logs + dataset/labels.json)
-python inject_bug.py
+python src/inject_bug.py
 
 # Baselines
-python regex_baseline.py
-python single_shot_baseline.py --model qwen2.5-coder:latest --seed 0 --out results/predictions_singleshot_7b.json
+python eval/regex_baseline.py
+python eval/single_shot_baseline.py --model qwen2.5-coder:latest --seed 0 --out results/predictions_singleshot_7b.json
 
 # Agent, 3 seeds per model (writes results/predictions_<model>_seed<k>.json)
-python run_agent_eval.py --model qwen2.5-coder:latest --repeats 3
-python run_agent_eval.py --model llama3:latest --repeats 3
+python eval/run_agent_eval.py --model qwen2.5-coder:latest --repeats 3
+python eval/run_agent_eval.py --model llama3:latest --repeats 3
 
 # Random-in-candidates control (100 seeds, sourced from one agent run's candidate_lines)
-python random_baseline.py --agent-predictions results/predictions_qwen2.5-coder-latest_seed0.json --seeds 100
+python eval/random_baseline.py --agent-predictions results/predictions_qwen2.5-coder-latest_seed0.json --seeds 100
 
 # Score one predictions file, or compare everything at once
-python evaluate.py results/predictions_qwen2.5-coder-latest_seed0.json --confusion --json results/metrics.json
-python compare_all.py --seeds 100
+python eval/evaluate.py results/predictions_qwen2.5-coder-latest_seed0.json --confusion --json results/metrics.json
+python eval/compare_all.py --seeds 100
 ```
 
 All predictions files and `metrics.json` live under `results/`; every script's default output
 path already points there, so none of the `--out`/`--agent-predictions` flags above are strictly
 required — they're shown for clarity about which file feeds which step.
 
-Every LLM call in `agent.py` and `single_shot_baseline.py` is made with `"options":
+Every LLM call in `src/agent.py` and `eval/single_shot_baseline.py` is made with `"options":
 {"temperature": 0, "seed": <seed>}`, and every prediction in every output file records both
 `"model"` and `"seed"` — so any row in Section 5 (other than `agent_v1`, see its footnote) can be
 regenerated exactly with the command above and the seed printed in its own filename.

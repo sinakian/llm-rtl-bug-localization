@@ -28,27 +28,14 @@ re-rank within it and name a bug class; a deterministic post-processing step dro
 model returns that isn't already a candidate.
 
 ```mermaid
-flowchart TD
-    IN["failing log + mutant RTL"]
+flowchart LR
+    A["failing log<br/>+ RTL"] --> B["deterministic<br/>retrieval"]
+    B --> C["16 candidate lines<br/>(true line always in)"]
+    C --> D["LLM<br/>ranks them"]
+    D --> E["top 5<br/>+ bug class"]
 
-    subgraph DET["deterministic — no model in the loop"]
-        A["classify<br/>parse_log → failure stage<br/>RESET / FILL / READBACK"]
-        B["gather_context<br/>stage → signal list →<br/>assignment lines + guard conditions"]
-    end
-
-    CAND[["candidate_lines<br/>100% coverage · median 16 of ~52"]]
-
-    LLM["hypothesize — LLM call<br/>rank the candidates,<br/>name the bug class"]
-
-    CO["_coerce — deterministic<br/>drop anything not in the set,<br/>append unranked candidates"]
-
-    OUT["predicted_lines[1..5] + predicted_class"]
-
-    IN --> A --> B --> CAND --> LLM --> CO --> OUT
-    CAND -. "closed set — the model cannot add a line" .-> CO
-
-    style LLM fill:#ffe8cc,stroke:#d97706
-    style CAND fill:#e0f2fe,stroke:#0284c7
+    style D stroke:#d97706,stroke-width:4px
+    style C stroke:#0284c7,stroke-width:4px
 ```
 
 ## Results

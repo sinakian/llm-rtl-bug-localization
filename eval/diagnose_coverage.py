@@ -1,6 +1,9 @@
+import os
+import sys
 import json
 import re
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 from agent import _stage_signals, _src_lines, _candidate_lines, _is_structural
 from agent_tools import parse_log, ast_trace_signal, find_condition_lines
 
