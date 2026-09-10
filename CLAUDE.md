@@ -42,7 +42,7 @@ python inject_bug.py
 
 # Run each triage method over dataset/*.log
 python regex_baseline.py           # -> predictions_regex.json
-python single_shot_baseline.py     # -> predictions_singleshot.json
+python single_shot_baseline.py --model qwen2.5-coder:7b --out predictions_singleshot_7b.json
 python run_agent_eval.py           # -> predictions_agent.json (drives agent.py's LangGraph pipeline)
 
 # Score a predictions file against dataset/labels.json
