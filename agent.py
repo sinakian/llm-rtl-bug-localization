@@ -46,6 +46,7 @@ class AgentState(TypedDict):
     log_path: str
     verilog_path: str
     model: str
+    seed: int
     log_summary: str
     failure_class: str
     code_context: str
@@ -57,8 +58,11 @@ class AgentState(TypedDict):
     suggested_fix: str
 
 
-def _ollama(prompt: str, as_json: bool, model: str = MODEL_NAME) -> str:
-    payload = {"model": model, "prompt": prompt, "stream": False}
+def _ollama(prompt: str, as_json: bool, model: str = MODEL_NAME, seed: int = 0) -> str:
+    # temperature=0 + a fixed seed makes runs reproducible; without this, Ollama samples
+    # and two runs of the same model/prompt can land on very different predictions.
+    payload = {"model": model, "prompt": prompt, "stream": False,
+               "options": {"temperature": 0, "seed": seed}}
     if as_json:
         payload["format"] = "json"
     r = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
@@ -217,7 +221,7 @@ Output ONLY this JSON:
   "predicted_lines":[most_likely, ...up to 5],
   "rationale":"...","suggested_fix":"..."}}"""
     try:
-        raw = _ollama(prompt, as_json=True, model=state["model"])
+        raw = _ollama(prompt, as_json=True, model=state["model"], seed=state["seed"])
         return _coerce(raw, _src_lines(state["verilog_path"]), state.get("ast_lines", []),
                         state.get("condition_lines", []))
     except Exception as e:
@@ -241,9 +245,11 @@ workflow.add_edge("hypothesize_emit", END)
 app = workflow.compile()
 
 
-def triage_run(run_id: str, log_path: str, verilog_path: str, model: str = MODEL_NAME) -> dict:
+def triage_run(run_id: str, log_path: str, verilog_path: str, model: str = MODEL_NAME,
+                seed: int = 0) -> dict:
     initial_state = {
         "run_id": run_id, "log_path": log_path, "verilog_path": verilog_path, "model": model,
+        "seed": seed,
         "log_summary": "", "failure_class": "", "code_context": "", "ast_lines": [],
         "condition_lines": [], "candidate_lines": [], "predicted_lines": [], "rationale": "",
         "suggested_fix": "",
@@ -252,6 +258,7 @@ def triage_run(run_id: str, log_path: str, verilog_path: str, model: str = MODEL
     return {
         "run_id": run_id,
         "model": model,
+        "seed": seed,
         "predicted_lines": final["predicted_lines"],
         "candidate_lines": final["candidate_lines"],
         "predicted_class": final["failure_class"],

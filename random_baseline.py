@@ -23,6 +23,8 @@ def compute_metrics(pls, pcls, true_line, cat):
         "top3_tol": any(abs(x - true_line) <= TOL for x in pls[:3]),
         "recall5": true_line in pls[:5],
         "class": pcls == cat,
+        # 0..1, not a hit-rate percentage like the others -- averaged separately below.
+        "mrr": (1.0 / (pls.index(true_line) + 1)) if true_line in pls else 0.0,
     }
 
 
@@ -70,35 +72,60 @@ def print_diagnostics(labels, candidates):
     print("=======================================================================\n")
 
 
+def mean_std(xs):
+    return statistics.mean(xs), (statistics.stdev(xs) if len(xs) > 1 else 0.0)
+
+
+def seed_rate_series(labels, candidates, n_seeds):
+    """Per-seed rate series over n_seeds seeds, overall AND per bug_type. top1/top3/
+    top3_tol/recall5/class are percentages (0-100) per seed; mrr is 0..1 per seed (it's
+    an average of reciprocal ranks, not a hit-rate). Single source of truth: both
+    print_seed_averaged() (this script's own table) and seed_averaged_overall() (what
+    compare_all.py imports for its 'random' row) build on this, so the numbers can't
+    drift apart between the two."""
+    cats = sorted({t["bug_type"] for t in labels.values()})
+    cat_counts = {cat: sum(1 for t in labels.values() if t["bug_type"] == cat) for cat in cats}
+    n = len(labels)
+    all_keys = METRIC_KEYS + ["mrr"]
+
+    per_seed_cat = {cat: {k: [] for k in all_keys} for cat in cats}
+    per_seed_overall = {k: [] for k in all_keys}
+
+    for seed in range(n_seeds):
+        _, per_run = run_for_seed(labels, candidates, seed)
+        cat_sums = {cat: {k: 0.0 for k in all_keys} for cat in cats}
+        overall_sums = {k: 0.0 for k in all_keys}
+        for run_id, t in labels.items():
+            m = per_run[run_id]
+            for k in all_keys:
+                cat_sums[t["bug_type"]][k] += m[k]
+                overall_sums[k] += m[k]
+        for cat in cats:
+            for k in METRIC_KEYS:
+                per_seed_cat[cat][k].append(cat_sums[cat][k] / cat_counts[cat] * 100)
+            per_seed_cat[cat]["mrr"].append(cat_sums[cat]["mrr"] / cat_counts[cat])
+        for k in METRIC_KEYS:
+            per_seed_overall[k].append(overall_sums[k] / n * 100)
+        per_seed_overall["mrr"].append(overall_sums["mrr"] / n)
+
+    return per_seed_cat, per_seed_overall, cat_counts, n
+
+
+def seed_averaged_overall(labels, candidates, n_seeds):
+    """(mean, std) per metric, seed-averaged, OVERALL row only -- imported by
+    compare_all.py so its 'random' row reflects the same seed-averaging as this script's
+    own table instead of a single, noisy seed-0 draw."""
+    _, per_seed_overall, _, _ = seed_rate_series(labels, candidates, n_seeds)
+    return {k: mean_std(xs) for k, xs in per_seed_overall.items()}
+
+
 def fmt_cell(mean, std, width=13):
     return f"{mean:4.1f}±{std:<4.1f}%".ljust(width)
 
 
 def print_seed_averaged(labels, candidates, n_seeds):
-    cats = sorted({t["bug_type"] for t in labels.values()})
-    cat_counts = {cat: sum(1 for t in labels.values() if t["bug_type"] == cat) for cat in cats}
-    n = len(labels)
-
-    per_seed_cat_rates = {cat: {k: [] for k in METRIC_KEYS} for cat in cats}
-    per_seed_overall_rates = {k: [] for k in METRIC_KEYS}
-
-    for seed in range(n_seeds):
-        _, per_run = run_for_seed(labels, candidates, seed)
-        cat_hits = {cat: {k: 0 for k in METRIC_KEYS} for cat in cats}
-        overall_hits = {k: 0 for k in METRIC_KEYS}
-        for run_id, t in labels.items():
-            m = per_run[run_id]
-            for k in METRIC_KEYS:
-                cat_hits[t["bug_type"]][k] += m[k]
-                overall_hits[k] += m[k]
-        for cat in cats:
-            for k in METRIC_KEYS:
-                per_seed_cat_rates[cat][k].append(cat_hits[cat][k] / cat_counts[cat] * 100)
-        for k in METRIC_KEYS:
-            per_seed_overall_rates[k].append(overall_hits[k] / n * 100)
-
-    def mean_std(xs):
-        return statistics.mean(xs), (statistics.stdev(xs) if len(xs) > 1 else 0.0)
+    per_seed_cat, per_seed_overall, cat_counts, n = seed_rate_series(labels, candidates, n_seeds)
+    cats = sorted(cat_counts)
 
     title = f"RANDOM BASELINE — seed-averaged over {n_seeds} seeds (mean±std)"
     print(f"===== {title} =====")
@@ -107,12 +134,31 @@ def print_seed_averaged(labels, candidates, n_seeds):
     print(header)
     print("-" * len(header))
     for cat in cats:
-        cells = " | ".join(fmt_cell(*mean_std(per_seed_cat_rates[cat][k])) for k in METRIC_KEYS)
+        cells = " | ".join(fmt_cell(*mean_std(per_seed_cat[cat][k])) for k in METRIC_KEYS)
         print(f"{cat:<15} | {cat_counts[cat]:<3} | {cells}")
     print("-" * len(header))
-    cells = " | ".join(fmt_cell(*mean_std(per_seed_overall_rates[k])) for k in METRIC_KEYS)
+    cells = " | ".join(fmt_cell(*mean_std(per_seed_overall[k])) for k in METRIC_KEYS)
     print(f"{'OVERALL':<15} | {n:<3} | {cells}")
     print("=" * len(header) + "\n")
+
+
+def load_labels_and_candidates(agent_predictions_path, labels_path="dataset/labels.json"):
+    """run_id -> label row, run_id -> candidate_lines, sourced from an agent predictions
+    file. Shared by this script's own main() and by compare_all.py, which imports it to
+    build the exact same candidate sets its 'random' row shuffles over."""
+    labels = {x["run_id"]: x for x in load(labels_path)}
+    agent_preds = {x["run_id"]: x for x in load(agent_predictions_path)}
+
+    missing = [rid for rid in labels if "candidate_lines" not in agent_preds.get(rid, {})]
+    if missing:
+        raise SystemExit(
+            f"{agent_predictions_path} has no 'candidate_lines' for {len(missing)} run(s) "
+            f"(e.g. {missing[0]}). Re-run run_agent_eval.py to regenerate it with the "
+            f"current agent.py before running this baseline."
+        )
+
+    candidates = {rid: agent_preds[rid]["candidate_lines"] for rid in labels}
+    return labels, candidates
 
 
 def main():
@@ -124,18 +170,7 @@ def main():
     ap.add_argument("--seeds", type=int, default=N_SEEDS)
     args = ap.parse_args()
 
-    labels = {x["run_id"]: x for x in load(args.labels)}
-    agent_preds = {x["run_id"]: x for x in load(args.agent_predictions)}
-
-    missing = [rid for rid in labels if "candidate_lines" not in agent_preds.get(rid, {})]
-    if missing:
-        raise SystemExit(
-            f"{args.agent_predictions} has no 'candidate_lines' for {len(missing)} run(s) "
-            f"(e.g. {missing[0]}). Re-run run_agent_eval.py to regenerate it with the "
-            f"current agent.py before running this baseline."
-        )
-
-    candidates = {rid: agent_preds[rid]["candidate_lines"] for rid in labels}
+    labels, candidates = load_labels_and_candidates(args.agent_predictions, args.labels)
 
     print_diagnostics(labels, candidates)
 

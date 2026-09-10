@@ -1,102 +1,120 @@
 [
     {
         "predicted_lines": [
-            37,
+            27,
+            34,
+            38,
             40,
-            43,
-            45,
-            52
+            42
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_001"
+        "run_id": "bug_001",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
-            24,
+            27,
+            34,
             38,
-            39,
+            40,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_002",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            40,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_003",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
             42,
             45
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_002"
+        "run_id": "bug_004",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
-            27,
-            28,
-            34,
-            35,
-            39
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_003"
-    },
-    {
-        "predicted_lines": [
-            27,
-            34,
-            38,
-            43,
-            45
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_004"
-    },
-    {
-        "predicted_lines": [
-            27,
-            33,
-            37,
-            40,
-            41
+            10,
+            11,
+            12,
+            13,
+            14
         ],
         "predicted_class": "wrong_reset",
-        "run_id": "bug_005"
+        "run_id": "bug_005",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
             25,
             26,
-            39,
-            40,
-            42
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_006"
-    },
-    {
-        "predicted_lines": [
-            12,
-            13,
-            14,
-            15,
-            17
-        ],
-        "predicted_class": "wrong_reset",
-        "run_id": "bug_007"
-    },
-    {
-        "predicted_lines": [
-            15,
-            26,
-            38,
-            44,
-            45
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_008"
-    },
-    {
-        "predicted_lines": [
-            19,
-            28,
             34,
             38,
             42
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_009"
+        "run_id": "bug_006",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            19,
+            27,
+            34,
+            38,
+            42
+        ],
+        "predicted_class": "wrong_reset",
+        "run_id": "bug_007",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            40,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_008",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            19,
+            27,
+            34,
+            38,
+            42
+        ],
+        "predicted_class": "wrong_reset",
+        "run_id": "bug_009",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
@@ -106,8 +124,10 @@
             42,
             46
         ],
-        "predicted_class": "operator_flip",
-        "run_id": "bug_010"
+        "predicted_class": "off_by_one",
+        "run_id": "bug_010",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
@@ -118,51 +138,61 @@
             45
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_011"
+        "run_id": "bug_011",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
-            14,
             27,
-            29,
-            35,
-            40
-        ],
-        "predicted_class": "wrong_reset",
-        "run_id": "bug_012"
-    },
-    {
-        "predicted_lines": [
-            29,
             34,
-            36,
             38,
-            40
+            42,
+            45
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_013"
+        "run_id": "bug_012",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_013",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
             34,
+            38,
             40,
-            41,
             42,
             45
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_014"
+        "run_id": "bug_014",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
+            10,
+            11,
             12,
-            27,
-            34,
-            38,
-            40
+            13,
+            14
         ],
         "predicted_class": "wrong_reset",
-        "run_id": "bug_015"
+        "run_id": "bug_015",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
@@ -173,7 +203,139 @@
             45
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_016"
+        "run_id": "bug_016",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_017",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            40,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_018",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_019",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_020",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_021",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            34,
+            39,
+            40,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_022",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_023",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            40,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_024",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            27,
+            34,
+            38,
+            42,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_025",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            25,
+            26,
+            34,
+            38,
+            42
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_026",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
@@ -183,129 +345,10 @@
             43,
             45
         ],
-        "predicted_class": "operator_flip",
-        "run_id": "bug_017"
-    },
-    {
-        "predicted_lines": [
-            17,
-            23,
-            34,
-            35,
-            39
-        ],
-        "predicted_class": "wrong_reset",
-        "run_id": "bug_018"
-    },
-    {
-        "predicted_lines": [
-            35,
-            36,
-            39,
-            40,
-            43
-        ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_019"
-    },
-    {
-        "predicted_lines": [
-            27,
-            34,
-            38,
-            41,
-            44
-        ],
-        "predicted_class": "operator_flip",
-        "run_id": "bug_020"
-    },
-    {
-        "predicted_lines": [
-            27,
-            38,
-            42,
-            44,
-            45
-        ],
-        "predicted_class": "wrong_reset",
-        "run_id": "bug_021"
-    },
-    {
-        "predicted_lines": [
-            37,
-            40,
-            41,
-            42,
-            45
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_022"
-    },
-    {
-        "predicted_lines": [
-            18,
-            29,
-            34,
-            39,
-            44
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_023"
-    },
-    {
-        "predicted_lines": [
-            27,
-            34,
-            38,
-            40,
-            41
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_024"
-    },
-    {
-        "predicted_lines": [
-            37,
-            40,
-            41,
-            42,
-            45
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_025"
-    },
-    {
-        "predicted_lines": [
-            12,
-            24,
-            31,
-            35,
-            39
-        ],
-        "predicted_class": "operator_flip",
-        "run_id": "bug_026"
-    },
-    {
-        "predicted_lines": [
-            24,
-            43,
-            45,
-            47,
-            51
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_027"
-    },
-    {
-        "predicted_lines": [
-            29,
-            30,
-            34,
-            36,
-            44
-        ],
-        "predicted_class": "off_by_one",
-        "run_id": "bug_028"
+        "run_id": "bug_027",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
@@ -316,17 +359,34 @@
             38
         ],
         "predicted_class": "off_by_one",
-        "run_id": "bug_029"
+        "run_id": "bug_028",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     },
     {
         "predicted_lines": [
-            11,
-            20,
-            24,
             27,
-            34
+            34,
+            38,
+            43,
+            45
+        ],
+        "predicted_class": "off_by_one",
+        "run_id": "bug_029",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
+    },
+    {
+        "predicted_lines": [
+            10,
+            11,
+            12,
+            13,
+            14
         ],
         "predicted_class": "wrong_reset",
-        "run_id": "bug_030"
+        "run_id": "bug_030",
+        "model": "qwen2.5-coder:latest",
+        "seed": 0
     }
 ]

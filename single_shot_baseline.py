@@ -13,12 +13,15 @@ def numbered(path):
     with open(path) as f:
         return "".join(f"{i+1}: {ln}" for i, ln in enumerate(f.readlines()))
 
-def query_model(model, prompt):
-    payload = {"model": model, "prompt": prompt, "stream": False, "format": "json"}
+def query_model(model, prompt, seed):
+    # temperature=0 + a fixed seed makes runs reproducible; without this, Ollama samples
+    # and two runs of the same model/prompt can land on very different predictions.
+    payload = {"model": model, "prompt": prompt, "stream": False, "format": "json",
+               "options": {"temperature": 0, "seed": seed}}
     r = requests.post(OLLAMA_URL, json=payload, timeout=TIMEOUT)
     return r.json().get("response", "{}")
 
-def get_llm_prediction(model, log_content, verilog_numbered):
+def get_llm_prediction(model, log_content, verilog_numbered, seed):
     """Returns (result, unparseable). `unparseable` is True only when the model's
     response failed to parse as JSON on both attempts. Retries once on invalid
     JSON; request errors (timeout, connection) fail immediately without a retry
@@ -40,7 +43,7 @@ Output ONLY this JSON:
 {{"predicted_lines": [l1, l2, l3, l4, l5], "predicted_class": "category"}}"""
     for attempt in range(2):
         try:
-            raw = query_model(model, prompt)
+            raw = query_model(model, prompt, seed)
         except Exception as e:
             print(f"  error: {e}")
             return {"predicted_lines": [], "predicted_class": "unknown"}, False
@@ -56,6 +59,8 @@ Output ONLY this JSON:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=OLLAMA_MODEL)
+    ap.add_argument("--seed", type=int, default=0,
+                    help="Ollama sampling seed, paired with temperature=0 (default: 0)")
     ap.add_argument("--out", default="predictions_singleshot.json")
     args = ap.parse_args()
 
@@ -72,10 +77,12 @@ def main():
             log_content = f.read()
         verilog_numbered = numbered(labels[run_id]["file"])   # per-case mutant, numbered
         print(f"Analyzing {run_id}...")
-        result, unparseable_json = get_llm_prediction(args.model, log_content, verilog_numbered)
+        result, unparseable_json = get_llm_prediction(args.model, log_content, verilog_numbered, args.seed)
         if unparseable_json:
             unparseable += 1
         result["run_id"] = run_id
+        result["model"] = args.model
+        result["seed"] = args.seed
         predictions.append(result)
 
     with open(args.out, "w") as f:
