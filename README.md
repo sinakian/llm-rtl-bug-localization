@@ -3,7 +3,7 @@
 Given a failing chip-design simulation log, predict which line of SystemVerilog caused it.
 Evaluated against a random-ranking control on 30 injected faults.
 
-**Result: 22%±2 top-1 vs 6%±5 chance.** The classifier is at chance and the second model is too — both reported below.
+**Result: a 22% (±2) success rate — about three standard deviations higher than the 6% (±5) expected from random guessing.** The Qwen2.5-Coder 7B model reached this level of accuracy for locating specific lines of code, but the Llama-3 8B model and the class-prediction task fell short (further details below).
 
 ## Results
 
