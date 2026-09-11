@@ -84,7 +84,7 @@ these comparisons to mean anything.
 
 - **n=30.** Every rate above is over 30 runs; the random control's own seed-to-seed standard
   deviation (±5 points on Top-1) is a lower bound on the noise from sample size alone.
-- **One small DUT.** All mutants are single-line edits to one ~52-line synchronous FIFO; bug
+- **One small DUT.** All mutants are single-line edits to one 48-line synchronous FIFO; bug
   interactions, multi-line causes, and larger designs are untested.
 - **Local 7-8B models only,** and they disagree substantially with each other (22%±2% vs. 10%±0%
   Top-1) on identical candidate sets and prompts — no larger or frontier model was tried.

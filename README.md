@@ -77,7 +77,7 @@ conditions (`find_condition_lines`) via targeted regex over the source — not a
 Over the current 30-run dataset, this candidate set has:
 
 - **Coverage: 100%** (30/30) — the true buggy line is in the candidate set for every run.
-- **Median size: 16 lines** — out of ~52 lines in `src/fifo.v`, so the model is choosing among
+- **Median size: 16 lines** — out of 48 lines in `src/fifo.v`, so the model is choosing among
   roughly a third of the file, not the whole thing.
 
 The LLM only re-ranks within this set (Section 2); `_coerce` enforces that its `predicted_lines`
@@ -139,7 +139,7 @@ dataset. `agent (Qwen2.5-Coder 7B)` and `agent (Llama-3 8B)` are each averaged o
   standard deviation (±5 points on Top-1) is a lower bound on how much noise to expect from
   sample size alone. Category-level breakdowns (e.g. per bug class, 5–10 runs each) are noisier
   still and are not reported here for that reason.
-- **One small DUT.** All 30 mutants are single-line edits to one ~52-line synchronous FIFO. Bug
+- **One small DUT.** All 30 mutants are single-line edits to one 48-line synchronous FIFO. Bug
   interactions, multi-line root causes, and larger designs are untested.
 - **Local 7–8B models only.** Qwen2.5-Coder (7B) and Llama-3 (8B), run locally via Ollama. No
   larger or frontier model was evaluated, and the two 7–8B models disagree substantially with
