@@ -80,6 +80,18 @@ One prerequisite fix, before any of this was meaningful: at Ollama's default sam
 apart (3% vs. 13%). Pinning `temperature=0` and a fixed seed was necessary, not optional, for
 these comparisons to mean anything.
 
+## Fallback audit
+
+Of the 180 agent records (2 models × 3 seeds × 30 cases), 1 came from the exception-handling
+fallback in `hypothesize_and_emit_node` rather than a scored LLM response: `bug_005`
+(qwen2.5-coder, seed 0) hit an Ollama read-timeout (120s) mid-call. That branch returns the
+deterministic `candidate_lines`, truncated to `N_PRED`, as `predicted_lines` — a backstop that
+reflects retrieval order, not model judgement — with `predicted_class` forced to `"unknown"`.
+The record's `rationale` field preserves the raw exception (`call failed: HTTPConnectionPool(...):
+Read timed out.`), so it's identifiable in the saved file, but the LLM's actual ranking for that
+case is gone: the backstop stands in for it, not a reconstruction of it. It's 1/180 (0.6%) of
+agent records and doesn't move any of the seed-averaged headline numbers beyond rounding.
+
 ## Limitations
 
 - **n=30.** Every rate above is over 30 runs; the random control's own seed-to-seed standard
